@@ -1,0 +1,10 @@
+id,name,level,ore,plasma,trainTicks,amount
+0,Weapons,1,90,70,800,2
+1,Weapons,2,140,120,1100,2
+2,Weapons,3,210,175,1400,2
+3,Armor,1,85,65,780,1
+4,Armor,2,135,110,1060,1
+5,Armor,3,200,165,1350,1
+6,Mobility,1,100,90,850,150
+7,Mobility,2,150,135,1150,150
+8,Mobility,3,220,190,1450,150

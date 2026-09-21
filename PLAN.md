@@ -130,3 +130,20 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Release 테스트 11/11 통과. 같은 맵 두 번 로드 및 직렬화 왕복 해시 동일.
 - 180도 대칭, 양측 본진-앞마당-중앙 연결성, 높이 단계, 자원 ID 검증 통과.
 - 공간 조회는 셀 후보를 ID 정렬로 반환하며 정밀 거리/범위 필터는 호출자 책임.
+
+## Phase 3 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Entities/EntityId.cs, EntityStore.cs, Components.cs: 세대 ID, 밀집 SoA, 고정 용량 free list, 상태 해시.
+- src/Sim/Data/Definitions.cs, DefDatabase.g.cs: 유닛/건물/업그레이드 불변 정의와 생성 테이블.
+- balance/units.csv, buildings.csv, upgrades.csv: 사용자 위임 시험용 밸런스.
+- tools/import_balance.gd: CSV 스키마/ID/값 검증 후 정수 원시값 C# 생성.
+- tests/Sim.Tests/EntityTests.cs: 슬롯 재사용, 오래된 ID 거부, 500 슬롯 10만 생성/삭제, 해시 및 할당량 검증.
+### 완료 조건
+- [ ] 500개 엔티티 생성/삭제 10만 회 후 메모리 안정과 해시 결정론 유지.
+- [ ] CSV 생성 테이블 빌드 및 유닛/건물 정의 유효성 테스트 통과.
+
+### Phase 3 완료
+- Release 테스트 14/14 통과.
+- 500개 슬롯 생성/삭제를 10만 배치(두 저장소에서 총 1억 회 생성)로 반복하고 고정 간격 상태 해시 일치 및 hot loop 할당 0바이트 확인.
+- 세대 ID, 오래된 핸들 거부, 컴포넌트 초기화 및 읽기 스냅샷 격리 검증.
+- 유닛 10종, 건물 12종, 업그레이드 9단계 CSV 코드 생성과 정의 참조 검증 완료.
