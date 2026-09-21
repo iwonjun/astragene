@@ -1,0 +1,13 @@
+<Project Sdk="Godot.NET.Sdk/4.6.3">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>enable</Nullable>
+    <RootNamespace>RtsGame</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="game/scripts/**/*.cs" />
+    <ProjectReference Include="src/Sim/Sim.csproj" />
+  </ItemGroup>
+</Project>

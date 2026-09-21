@@ -1,0 +1,7 @@
+.tools/
+.godot/
+/android/
+**/bin/
+**/obj/
+TestResults/
+logs/

@@ -1,0 +1,51 @@
+name: Phase validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet test tests/Sim.Tests/Sim.Tests.csproj --configuration Release
+      - name: Prove engine boundary
+        shell: pwsh
+        run: ./tools/verify_sim_boundary.ps1
+  godot:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install Godot 4.6.3 .NET
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_mono_win64.zip'
+          Invoke-WebRequest $url -OutFile "$env:RUNNER_TEMP/godot.zip"
+          Expand-Archive "$env:RUNNER_TEMP/godot.zip" "$env:RUNNER_TEMP/godot"
+          "GODOT=$env:RUNNER_TEMP/godot/Godot_v4.6.3-stable_mono_win64/Godot_v4.6.3-stable_mono_win64_console.exe" >> $env:GITHUB_ENV
+      - run: dotnet build RtsGame.sln --configuration Debug
+      - run: dotnet test --configuration Debug --no-build
+      - name: Generate scenes and smoke check
+        shell: pwsh
+        run: |
+          function Invoke-GodotChecked([string[]]$Arguments) {
+            $log = & $env:GODOT @Arguments 2>&1
+            $exitCode = $LASTEXITCODE
+            $log | Write-Host
+            if ($exitCode -ne 0 -or ($log -join "`n") -match '(?m)(SCRIPT ERROR:|ERROR:)') {
+              throw 'Godot validation failed.'
+            }
+          }
+          Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_scenes.gd')
+          git diff --exit-code -- game/scenes
+          if ($LASTEXITCODE -ne 0) { throw 'Generated scenes differ from committed files.' }
+          Invoke-GodotChecked @('--headless', '--editor', '--import')
+          Invoke-GodotChecked @('--headless', '--quit-after', '3')
+          foreach ($name in @('boot','lobby','match','replay')) {
+            Invoke-GodotChecked @('--headless', "res://game/scenes/$name.tscn", '--quit-after', '3')
+          }
