@@ -93,3 +93,9 @@ FNV-1a 해시는 정수의 little-endian 바이트를 사용하며 .NET 객체 �
 
 사용자는 Phase 1~13 연속 진행과 시험용 밸런스 설계/조정을 승인했습니다.
 단계별 완료 조건은 유지하며 추가 단계 승인 대기는 필요하지 않습니다.
+
+## 맵 (Phase 2)
+`godot --headless --script res://tools/gen_map.gd`로 duel.map을 생성합니다.
+AGMP magic, 버전 1, 폭/높이 128, 이후 행 우선 순서로 flags(u8), height(u8), resource ID(i32)를 저장합니다.
+모든 다중 바이트 값은 little-endian입니다. 잘못된 길이/버전/타일은 로더에서 거부합니다.
+SpatialHash는 4타일 셀 후보 ID를 정렬 반환합니다. 정밀 거리 판정은 호출자가 수행합니다.

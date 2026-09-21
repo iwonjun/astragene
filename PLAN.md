@@ -108,3 +108,25 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 로컬 Release 테스트 8/8 통과. 제곱근 0~10000을 0.01 간격으로 검증, 난수 100만 수열 일치.
 - 고정 골든 값: Q32.32 산술, sqrt(2), 삼각함수 사분면, 시드 1 난수 초기 상태/출력, FNV hello.
 - 기존 코어 경계 검증 통과. ARM64 실제 실행 결과 대기 중이며 아직 Phase 2로 진행하지 않음.
+
+### Phase 1 완료
+- 커밋 0750b51. GitHub 실행 35624408453에서 ubuntu-24.04(x64), ubuntu-24.04-arm(ARM64) 모두 성공.
+- 제곱근 정확도, 100만 동일 시드 수열, 고정 기대값 골든 테스트 완료 조건 충족.
+- 전체 로컬 빌드/테스트 통과. Phase 2 시작.
+
+## Phase 2 — 진행 중
+### 변경 파일과 이유
+- src/Sim/World/Tile.cs, Grid.cs: 불변 128x128 타일, 유효 좌표와 높이/자원 검증.
+- src/Sim/World/MapData.cs, MapLoader.cs: 버전 포함 little-endian 바이너리 직렬화 및 엄격한 로더.
+- src/Sim/World/SpatialHash.cs: 4타일 셀, ID 정렬 조회, 이동/삭제 지원.
+- tools/gen_map.gd: 180도 대칭의 1v1 맵, 본진/앞마당/중앙/고지대 및 자원 배치.
+- game/maps/duel.map: 생성 결과 커밋.
+- tests/Sim.Tests/WorldTests.cs: 두 번 로드 해시 일치, 왕복/손상 검증, 대칭/연결성, 공간 조회 순서.
+### 완료 조건
+- [ ] 생성 맵 2회 로드 초기 해시 일치.
+- [ ] 맵 생성/직렬화/공간 조회 테스트 및 빌드 통과.
+
+### Phase 2 완료
+- Release 테스트 11/11 통과. 같은 맵 두 번 로드 및 직렬화 왕복 해시 동일.
+- 180도 대칭, 양측 본진-앞마당-중앙 연결성, 높이 단계, 자원 ID 검증 통과.
+- 공간 조회는 셀 후보를 ID 정렬로 반환하며 정밀 거리/범위 필터는 호출자 책임.

@@ -14,5 +14,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <ProjectReference Include="../../src/Sim/Sim.csproj" />
+    <None Include="../../game/maps/duel.map" Link="duel.map" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
