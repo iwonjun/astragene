@@ -79,3 +79,32 @@ AGENTS.md 원문을 매 세션 읽는다. 한 번에 한 Phase만 수행하며 D
 ### 다음 Phase 제안 (승인 전 실행 금지)
 Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하고
 정확도, 100만 난수열 재현, x64/ARM 골든 테스트를 추가한다.
+
+## 사용자 추가 지시 — 연속 진행 승인
+사용자는 Phase 0 이후 남은 모든 Phase를 단계별 재승인 없이 계속 진행하도록 지시했다.
+이는 AGENTS.md 원문의 단계 종료 후 승인 대기 조항을 대체한다. 원문 파일은 보존한다.
+한 번에 한 Phase, 사전 계획, 테스트, 완료 조건 및 Phase별 커밋은 유지한다.
+불명확한 밸런스 수치 등 별도 설계 결정은 확인한다.
+
+## Phase 1 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Core/Fix64.cs, Fix2.cs: Q32.32 고정소수점, Int128 중간연산 및 벡터.
+- src/Sim/Core/FixMath.cs, TrigTables.g.cs: 정수 제곱근 및 보간 삼각함수 LUT.
+- tools/gen_trig_tables.gd: 1024개 Sin 및 Atan 상수 테이블 오프라인 생성.
+- src/Sim/Core/DetRandom.cs: 명시적 상태의 xorshift128+와 SplitMix64 시드 확장.
+- src/Sim/Core/SimClock.cs: 20Hz 정수 틱 시계.
+- src/Sim/Core/WorldHasher.cs: 바이트 순서 명시 FNV-1a 64bit.
+- tests/Sim.Tests/CoreTests.cs: 경계, 오버플로, 정확도, 고정 기대값 및 100만 수열 테스트.
+- .github/workflows/ci.yml: x64/ARM64 동일 골든 테스트 실행.
+- README.md: 산술 반올림/오버플로, 각도 단위, 해시 직렬화 계약 기록.
+### 완료 조건
+- [ ] 0~10000 제곱근 오차 <0.001.
+- [ ] 동일 시드 100만 난수열 일치.
+- [ ] 하드코딩 골든 테스트 x64/ARM64 모두 통과.
+- [ ] 전체 빌드 및 의존 차단 검증, Phase 1 커밋.
+- 추가 승인: 사양에 없는 시험용 밸런스 수치 설계와 플레이 테스트 조정을 에이전트에 위임함. balance/*.csv에서 관리한다.
+
+### Phase 1 검증 중간 결과
+- 로컬 Release 테스트 8/8 통과. 제곱근 0~10000을 0.01 간격으로 검증, 난수 100만 수열 일치.
+- 고정 골든 값: Q32.32 산술, sqrt(2), 삼각함수 사분면, 시드 1 난수 초기 상태/출력, FNV hello.
+- 기존 코어 경계 검증 통과. ARM64 실제 실행 결과 대기 중이며 아직 Phase 2로 진행하지 않음.
