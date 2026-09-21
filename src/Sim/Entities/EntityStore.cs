@@ -74,6 +74,7 @@ public sealed class EntityStore
             h.AddFix(Health[i].Current); h.AddFix(Health[i].Maximum);
             h.AddInt32(Owner[i].Player); h.AddInt32(Type[i].Definition); h.AddByte(Type[i].IsBuilding ? (byte)1 : (byte)0);
             h.AddFix2(Movement[i].Destination); h.AddFix(Movement[i].Speed); h.AddInt32(Movement[i].StalledTicks); h.AddByte(Movement[i].Airborne ? (byte)1 : (byte)0);
+            h.AddByte(Movement[i].Active ? (byte)1 : (byte)0); h.AddFix(Movement[i].Radius); h.AddFix(Movement[i].LastDistanceSquared);
             h.AddInt32(Combat[i].Target.Index); h.AddUInt64(Combat[i].Target.Generation); h.AddInt32(Combat[i].Cooldown); h.AddInt32(Combat[i].Windup);
             h.AddInt32(Cargo[i].Ore); h.AddInt32(Cargo[i].Plasma); h.AddInt32(Cargo[i].ResourceNode);
             h.AddInt32(Production[i].Definition); h.AddInt32(Production[i].RemainingTicks); h.AddInt32(Production[i].QueueCount);

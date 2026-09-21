@@ -147,3 +147,19 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 500개 슬롯 생성/삭제를 10만 배치(두 저장소에서 총 1억 회 생성)로 반복하고 고정 간격 상태 해시 일치 및 hot loop 할당 0바이트 확인.
 - 세대 ID, 오래된 핸들 거부, 컴포넌트 초기화 및 읽기 스냅샷 격리 검증.
 - 유닛 10종, 건물 12종, 업그레이드 9단계 CSV 코드 생성과 정의 참조 검증 완료.
+
+## Phase 4 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Pathing/FlowField.cs, FlowFieldCache.cs: 정수 10/14 코스트 Dijkstra, corner-cut 방지, 32개 LRU.
+- src/Sim/Pathing/LocalAvoidance.cs: ID 순서, 고정 2회 push-apart, 충돌 검증.
+- src/Sim/Systems/MovementSystem.cs: 지상 필드/공중 직선, 60틱 스톨 경로 재계산.
+- src/Sim/Entities/Components.cs, EntityStore.cs: 이동 목표 활성/반경/진전 상태와 해시 확장.
+- tests/Sim.Tests/PathingTests.cs: 미로 도달, 캐시 교체, 5000틱 결정론 및 200유닛 틱 3ms 검증.
+### 완료 조건
+- [ ] 동일 입력 5000틱 위치/상태 해시 일치.
+- [ ] 미로 도달률 100%, 200유닛 이동 틱 평균 <3ms.
+
+### Phase 4 완료
+- Release 테스트 19/19 통과: 5000틱 재생 해시 동일, 미로 모든 보행 가능 타일 경로 존재, 실제 이동 8/8 도착.
+- 200유닛/1000틱 평균 <3ms 통과(초기 flow field 생성 제외, 로컬 CPU 기준).
+- 32개 LRU 교체, 벽 모서리 통과 금지, 공중 직선 이동 및 겹친 유닛 분리 검증.
