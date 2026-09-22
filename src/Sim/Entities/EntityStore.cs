@@ -48,7 +48,7 @@ public sealed class EntityStore
         if (_free < 0) throw new InvalidOperationException("Entity capacity exhausted.");
         int i = _free; _free = _next[i]; _next[i] = -1;
         _alive[i] = true; Count++;
-        Combat[i].Target = EntityId.None; Cargo[i].ResourceNode = -1;
+        Combat[i].Target = EntityId.None; Combat[i].LastAttacker = EntityId.None; Cargo[i].ResourceNode = -1;
         return new EntityId(i, _generations[i]);
     }
     internal bool Destroy(EntityId id)
@@ -76,6 +76,7 @@ public sealed class EntityStore
             h.AddFix2(Movement[i].Destination); h.AddFix(Movement[i].Speed); h.AddInt32(Movement[i].StalledTicks); h.AddByte(Movement[i].Airborne ? (byte)1 : (byte)0);
             h.AddByte(Movement[i].Active ? (byte)1 : (byte)0); h.AddFix(Movement[i].Radius); h.AddFix(Movement[i].LastDistanceSquared);
             h.AddInt32(Combat[i].Target.Index); h.AddUInt64(Combat[i].Target.Generation); h.AddInt32(Combat[i].Cooldown); h.AddInt32(Combat[i].Windup);
+            h.AddInt32(Combat[i].LastAttacker.Index); h.AddUInt64(Combat[i].LastAttacker.Generation);
             h.AddInt32(Cargo[i].Ore); h.AddInt32(Cargo[i].Plasma); h.AddInt32(Cargo[i].ResourceNode);
             h.AddInt32(Production[i].Definition); h.AddInt32(Production[i].RemainingTicks); h.AddInt32(Production[i].QueueCount);
             h.AddInt32(Vision[i].Radius); h.AddByte(Vision[i].Detector ? (byte)1 : (byte)0);

@@ -189,3 +189,18 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 선택 한도 200, Ctrl 토글, 그룹 저장/복원/연타 점프 신호, 동종 선택 및 선택의 Sim 해시 비영향 확인.
 - 최신 GdUnit4는 headless 실행을 기본 거부하므로 --ignoreHeadlessMode 사용. OS 이벤트 전달 대신 직접 선택/입력 메서드를 검증.
 - 프레임워크 v6.2.1 MIT 라이선스 확인, tools/setup_gdunit.ps1로 고정 버전 설치, CI 포함.
+
+## Phase 6 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Systems/CombatSystem.cs: 타입/방어/고지대 데미지, 8틱 타겟 평가, windup/쿨다운, 투사체 저장소와 스플래시.
+- src/Sim/World/SimWorld.cs: 공격 명령, 전투 틱, 즉시 사망 이벤트와 전투 상태 해시.
+- src/Sim/Entities/Components.cs, EntityStore.cs: 최근 공격자 상태 및 해시.
+- balance/units.csv, tools/import_balance.gd, src/Sim/Data/*: 투사체 속도/스플래시/이동 중 공격 정책 데이터.
+- tests/Sim.Tests/CombatTests.cs: 데미지 테이블, 고지대, 아군 스플래시, 3000틱 생존자/체력 해시 동일.
+### 완료 조건
+- [ ] 동일 초기 2군 전투 3000틱 생존자/체력 해시 일치.
+
+### Phase 6 완료
+- Release 테스트 32/32 통과. 40유닛 두 진영 3000틱 전투의 생존자/체력/전체 상태 해시 일치.
+- 방어 타입 표, 최소 피해 1, 고지대 25% 감소, 공성 windup/투사체 및 아군 스플래시 검증.
+- 고지대/스플래시 배율은 방어력 차감 전에 적용하며 CSV 피해/사거리/속도를 사용.

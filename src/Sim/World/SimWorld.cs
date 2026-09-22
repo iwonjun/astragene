@@ -18,6 +18,7 @@ public sealed class SimWorld
     private readonly SimClock _clock=new();
     public long TickNumber=>_clock.Tick;
     private readonly MovementSystem _movement;
+    private readonly CombatSystem _combat;
     private readonly CommandQueue[] _queues;
     private readonly UnitState[] _states;
     private readonly Command[] _active;
@@ -27,7 +28,7 @@ public sealed class SimWorld
     public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024)
     {
         Map=map; Entities=new EntityStore(capacity); _random=new DetRandom(seed);
-        _movement=new MovementSystem(map.Grid,capacity);
+        _movement=new MovementSystem(map.Grid,capacity); _combat=new CombatSystem(capacity);
         _queues=new CommandQueue[capacity]; _states=new UnitState[capacity]; _active=new Command[capacity]; _patrolOrigin=new Fix2[capacity];
         for(int i=0;i<capacity;i++)_queues[i]=new CommandQueue();
         foreach(var spawn in spawns) Spawn(spawn);
@@ -53,6 +54,7 @@ public sealed class SimWorld
         for(int i=0;i<Entities.Capacity;i++)
         {
             var id=Entities.IdAt(i);if(id==EntityId.None)continue;
+            if(_states[i]==UnitState.Attacking && !Entities.IsAlive(_active[i].Target))_states[i]=UnitState.Idle;
             if(_states[i]==UnitState.Following && Entities.IsAlive(_active[i].Target))
                 _movement.Move(Entities,id,Entities.Get(_active[i].Target).Transform.Position);
             if(_states[i]==UnitState.Patrolling && !Entities.Movement[i].Active)
@@ -63,7 +65,7 @@ public sealed class SimWorld
             if((_states[i]==UnitState.Moving && !Entities.Movement[i].Active) || (_states[i]==UnitState.Following && !Entities.IsAlive(_active[i].Target)))_states[i]=UnitState.Idle;
             if(_states[i]==UnitState.Idle && _queues[i].TryDequeue(out var queued))Execute(queued);
         }
-        _movement.Tick(Entities); _clock.Advance();
+        _movement.Tick(Entities); _combat.Tick(Entities,Map,_clock.Tick,_states,_active,_movement,Kill); _clock.Advance();
     }
     private bool Accept(Command c)
     {
@@ -86,6 +88,11 @@ public sealed class SimWorld
         }
         return true;
     }
+    private void Kill(EntityId id,EntityId source)
+    {
+        int player=Entities.Owner[id.Index].Player;
+        if(Entities.Destroy(id)){_queues[id.Index].Clear();_states[id.Index]=UnitState.Idle;_events.Enqueue(new(_clock.Tick,player,"Death",id));}
+    }
     public ulong Hash()
     {
         var h=new WorldHasher();h.AddUInt64(Map.Hash());h.AddUInt64(Entities.Hash());h.AddInt64(_clock.Tick);
@@ -96,6 +103,7 @@ public sealed class SimWorld
             if(Entities.IdAt(i)==EntityId.None)continue;
             h.AddInt32((int)_states[i]);_queues[i].Hash(ref h);_active[i].Write(bytes);h.Add(bytes);h.AddFix2(_patrolOrigin[i]);
         }
+        _combat.Hash(ref h);
         return h.Value;
     }
 }
