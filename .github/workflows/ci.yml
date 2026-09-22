@@ -5,6 +5,7 @@ permissions:
 jobs:
   sim:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
@@ -32,7 +33,7 @@ jobs:
           Expand-Archive "$env:RUNNER_TEMP/godot.zip" "$env:RUNNER_TEMP/godot"
           "GODOT=$env:RUNNER_TEMP/godot/Godot_v4.6.3-stable_mono_win64/Godot_v4.6.3-stable_mono_win64_console.exe" >> $env:GITHUB_ENV
       - run: dotnet build RtsGame.sln --configuration Debug
-      - run: dotnet test --configuration Debug --no-build
+      - run: dotnet test --configuration Release
       - name: Generate scenes and smoke check
         shell: pwsh
         run: |

@@ -163,3 +163,19 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Release 테스트 19/19 통과: 5000틱 재생 해시 동일, 미로 모든 보행 가능 타일 경로 존재, 실제 이동 8/8 도착.
 - 200유닛/1000틱 평균 <3ms 통과(초기 flow field 생성 제외, 로컬 CPU 기준).
 - 32개 LRU 교체, 벽 모서리 통과 금지, 공중 직선 이동 및 겹친 유닛 분리 검증.
+
+## Phase 5 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Commands/Command.cs, CommandQueue.cs, CommandStateMachine.cs: 48바이트 wire 명령, 유닛별 8칸 큐, 명시적 전이.
+- src/Sim/World/SimWorld.cs: 외부 명령만 상태를 변경하는 시뮬 실행 API 및 조회/이벤트 경계.
+- game/scripts/Bridge/MatchBridge.cs: Godot와 Sim 변환 및 명령 제출.
+- game/scripts/View/SelectionController.cs: 로컬 선택, 박스/동종/Ctrl/0~9 그룹 및 카메라 점프 신호.
+- tests/Sim.Tests/CommandTests.cs: 직렬화, 잘못된 입력, 큐/상태 전이, 선택 데이터 비포함 확인.
+- tools/build_scenes.gd: match에 Bridge/SelectionController 노드 코드 생성.
+- GdUnit4 및 통합 테스트 구성: 입력/씬 연결 확인.
+
+### Phase 4 원격 성능 보완
+- 원격 x64 평균 3.363ms, Windows Debug 11.1402ms로 기존 임계값 실패를 확인.
+- 회피 후보 정렬 반복을 제거하고 ID 밀집 순서/축별 빠른 거부 후 필요한 쌍만 128비트 거리 연산.
+- 성능 측정은 Release에서 실행하고 스트레스 테스트와 병렬 실행하지 않도록 변경.
+- Phase 5 추가 진행 전 원격 재검증 필요.
