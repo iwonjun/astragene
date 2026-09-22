@@ -204,3 +204,18 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Release 테스트 32/32 통과. 40유닛 두 진영 3000틱 전투의 생존자/체력/전체 상태 해시 일치.
 - 방어 타입 표, 최소 피해 1, 고지대 25% 감소, 공성 windup/투사체 및 아군 스플래시 검증.
 - 고지대/스플래시 배율은 방어력 차감 전에 적용하며 CSV 피해/사거리/속도를 사용.
+
+## Phase 7 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Systems/EconomySystem.cs: Ore/Plasma, 노드 2슬롯, 채집 40틱, 반납/수리/건설/재생.
+- src/Sim/Systems/ProductionSystem.cs: 큐5, 취소환불, 인구, 테크 및 3종3단계 업그레이드.
+- src/Sim/World/SimWorld.cs: 경제 초기 설정, 명령 라우팅, 리소스 상태/해시와 이벤트.
+- balance/resources.csv, src/Sim/Data/*, tools/import_balance.gd: 자원/시작값 CSV 생성.
+- src/Sim/Commands/Command.cs: Research 명령 추가.
+- tests/Sim.Tests/EconomyTests.cs: 일꾼12->병영->유닛생산 시나리오 및 환불/슬롯/진영별 건설.
+- Phase 8 VisibilityFilter 전에는 건설 시야 판정용 현재 아군 비전 원형 조회를 사용하고 이후 필터로 교체.
+
+### Phase 7 검증 결과
+- Release 경제 시나리오 5/5 통과. 초기 Ore 450에서 채집, 일꾼 12, 병영, 보급, Trooper 생산 수행.
+- 생산 큐5, 취소100%환불, 두 진영 건설 차이, 노드2슬롯, 가스 추출기 필요, 업그레이드 순차 3단계 및 속도 반영 검증.
+- 자원 규칙은 balance/rules.csv에서 코드 생성. 생산 큐가 인구를 예약하고 보급 상실 시 완성을 차단.

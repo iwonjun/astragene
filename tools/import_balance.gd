@@ -5,9 +5,10 @@ var failed := false
 
 func _initialize() -> void:
     var output := "// Generated from balance/*.csv by tools/import_balance.gd.\nusing System;\nnamespace RtsGame.Sim.Data;\n\npublic static class DefDatabase\n{\n"
-    output += _table("units", "Unit", "id,name,faction,health,armor,damage,range,speedMilli,supply,ore,plasma,trainTicks,vision,attack,defense,airborne,worker,cooldownTicks,windupTicks,trainer,requiredTech,projectileSpeed,splashRadiusMilli,attackWhileMoving")
+    output += _table("units", "Unit", "id,name,faction,health,armor,damage,range,speedMilli,supply,ore,plasma,trainTicks,vision,attack,defense,airborne,worker,cooldownTicks,windupTicks,trainer,requiredTech,projectileSpeed,splashRadiusMilli,attackWhileMoving,spawnCount")
     output += _table("buildings", "Building", "id,name,faction,health,armor,ore,plasma,buildTicks,supply,width,vision,requiredTech")
     output += _table("upgrades", "Upgrade", "id,name,level,ore,plasma,trainTicks,amount")
+    output += _table("rules", "Rule", "id,name,value")
     output += "}\n"
     if failed:
         quit(1)

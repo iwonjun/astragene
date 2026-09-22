@@ -27,7 +27,7 @@ internal sealed class CombatSystem
         if(uphill)damage*=Fix64.FromRatio(3,4);
         return FixMath.Max(Fix64.One,damage-Fix64.FromInt(armor));
     }
-    internal void Tick(EntityStore s,MapData map,long tick,UnitState[] states,Command[] commands,MovementSystem movement,Action<EntityId,EntityId> kill)
+    internal void Tick(EntityStore s,MapData map,long tick,UnitState[] states,Command[] commands,MovementSystem movement,EconomySystem economy,Action<EntityId,EntityId> kill)
     {
         for(int i=0;i<s.Capacity;i++)
         {
@@ -58,7 +58,7 @@ internal sealed class CombatSystem
             if(combat.Windup==0){combat.Windup=definition.WindupTicks; if(combat.Windup>0)continue;}
             else {combat.Windup--;if(combat.Windup>0)continue;}
             int h=Height(map,s.Transform[i].Position);
-            if(definition.ProjectileSpeed==0)Hit(s,map,id,combat.Target,target,definition,h,kill);
+            if(definition.ProjectileSpeed==0)Hit(s,map,id,combat.Target,target,definition,h,s.Owner[i].Player,economy,kill);
             else
             {
                 for(int p=0;p<_projectiles.Length;p++)if(!_projectiles[p].Active)
@@ -75,7 +75,7 @@ internal sealed class CombatSystem
             var d=DefDatabase.Units[shot.Definition];Fix2 delta=shot.Destination-shot.Position;
             Fix64 distance=delta.Length,step=Fix64.FromRatio(d.ProjectileSpeed,20);
             if(distance<=step)
-            {Hit(s,map,shot.Source,shot.Target,shot.Destination,d,shot.Height,kill);shot.Active=false;}
+            {Hit(s,map,shot.Source,shot.Target,shot.Destination,d,shot.Height,shot.Owner,economy,kill);shot.Active=false;}
             else {shot.Position+=delta/distance*step;if(--shot.Life<=0)shot.Active=false;}
         }
     }
@@ -94,7 +94,7 @@ internal sealed class CombatSystem
         return result;
     }
     private static int Height(MapData map,Fix2 p)=>map.Grid[p.X.FloorToInt(),p.Y.FloorToInt()].Height;
-    private static void Hit(EntityStore s,MapData map,EntityId source,EntityId target,Fix2 center,UnitDef d,int sourceHeight,Action<EntityId,EntityId> kill)
+    private static void Hit(EntityStore s,MapData map,EntityId source,EntityId target,Fix2 center,UnitDef d,int sourceHeight,int sourceOwner,EconomySystem economy,Action<EntityId,EntityId> kill)
     {
         Fix64 radius=Fix64.FromRatio(d.SplashRadiusMilli,1000);
         for(int i=0;i<s.Capacity;i++)
@@ -110,7 +110,7 @@ internal sealed class CombatSystem
             }
             var type=s.Type[i];int armor=type.IsBuilding?DefDatabase.Buildings[type.Definition].Armor:DefDatabase.Units[type.Definition].Armor;
             ArmorType defense=type.IsBuilding?ArmorType.Heavy:DefDatabase.Units[type.Definition].Defense;
-            s.Health[i].Current-=Damage(d.Damage,d.Attack,defense,armor,sourceHeight<Height(map,s.Transform[i].Position),scale);
+            s.Health[i].Current-=Damage(d.Damage+economy.UpgradeAmount(sourceOwner,0),d.Attack,defense,armor+economy.UpgradeAmount(s.Owner[i].Player,1),sourceHeight<Height(map,s.Transform[i].Position),scale);
             s.Combat[i].LastAttacker=source;
             if(s.Health[i].Current<=Fix64.Zero)kill(id,source);
         }

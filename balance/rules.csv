@@ -1,0 +1,12 @@
+id,name,value
+0,StartingOre,450
+1,StartingPlasma,0
+2,OreNodeAmount,1500
+3,PlasmaNodeAmount,3000
+4,OrePerTrip,5
+5,PlasmaPerTrip,4
+6,GatherTicks,40
+7,NodeSlots,2
+8,RepairPerSecond,8
+9,RegenPerSecond,2
+10,WorkerRadiusMilli,250
