@@ -179,3 +179,13 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 회피 후보 정렬 반복을 제거하고 ID 밀집 순서/축별 빠른 거부 후 필요한 쌍만 128비트 거리 연산.
 - 성능 측정은 Release에서 실행하고 스트레스 테스트와 병렬 실행하지 않도록 변경.
 - Phase 5 추가 진행 전 원격 재검증 필요.
+
+### Phase 4 원격 재검증 완료
+- ef2440f / Actions 35740287138: x64, ARM64 테스트와 Windows 전체 빌드/테스트/씬 검사 모두 성공.
+- 최적화 후 로컬 Release 이동 평균 0.3445ms/틱.
+
+### Phase 5 완료
+- Sim 테스트 23/23, GdUnit4 씬/선택 통합 테스트 2/2 통과.
+- 선택 한도 200, Ctrl 토글, 그룹 저장/복원/연타 점프 신호, 동종 선택 및 선택의 Sim 해시 비영향 확인.
+- 최신 GdUnit4는 headless 실행을 기본 거부하므로 --ignoreHeadlessMode 사용. OS 이벤트 전달 대신 직접 선택/입력 메서드를 검증.
+- 프레임워크 v6.2.1 MIT 라이선스 확인, tools/setup_gdunit.ps1로 고정 버전 설치, CI 포함.

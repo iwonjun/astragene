@@ -34,6 +34,9 @@ jobs:
           "GODOT=$env:RUNNER_TEMP/godot/Godot_v4.6.3-stable_mono_win64/Godot_v4.6.3-stable_mono_win64_console.exe" >> $env:GITHUB_ENV
       - run: dotnet build RtsGame.sln --configuration Debug
       - run: dotnet test --configuration Release
+      - name: Install scene test framework
+        shell: pwsh
+        run: ./tools/setup_gdunit.ps1
       - name: Generate scenes and smoke check
         shell: pwsh
         run: |
@@ -50,6 +53,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Generated scenes differ from committed files.' }
           Invoke-GodotChecked @('--headless', '--editor', '--import')
           Invoke-GodotChecked @('--headless', '--quit-after', '3')
+          Invoke-GodotChecked @('--headless', '-s', 'addons/gdUnit4/bin/GdUnitCmdTool.gd', '--ignoreHeadlessMode', '-a', 'test/')
           foreach ($name in @('boot','lobby','match','replay')) {
             Invoke-GodotChecked @('--headless', "res://game/scenes/$name.tscn", '--quit-after', '3')
           }

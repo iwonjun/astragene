@@ -20,7 +20,10 @@ func _initialize() -> void:
             push_error("Cannot open %s: %s" % [path, error_string(FileAccess.get_open_error())])
             quit(1)
             return
-        output.store_string('[gd_scene format=3 uid="%s"]\n\n[node name="%s" type="Node" unique_id=%d]\n' % [uid, scene_name.capitalize(), node_id])
+        var content: String = '[gd_scene format=3 uid="%s"]\n\n[node name="%s" type="Node" unique_id=%d]\n' % [uid, scene_name.capitalize(), node_id]
+        if scene_name == "match":
+            content = '[gd_scene format=3 uid="%s"]\n\n[ext_resource type="Script" path="res://game/scripts/Bridge/MatchBridge.cs" id="1"]\n[ext_resource type="Script" path="res://game/scripts/View/SelectionController.cs" id="2"]\n\n[node name="Match" type="Node" unique_id=%d]\n\n[node name="Bridge" type="Node" parent="." unique_id=1001]\nscript = ExtResource("1")\n\n[node name="Selection" type="Node2D" parent="." unique_id=1002]\nscript = ExtResource("2")\n' % [uid,node_id]
+        output.store_string(content)
         output.flush()
         error = output.get_error()
         output.close()

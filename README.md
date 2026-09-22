@@ -48,7 +48,7 @@ GitHub Actions는 Linux에서 Godot 없이 Sim 테스트/의존 차단을 확인
 Windows에서 전체 솔루션 빌드, 테스트, 씬 재생성 차이 검사 및 Godot headless 로드를 수행합니다.
 원격 저장소는 https://github.com/iwonjun/astragene 입니다. Actions 실행 결과는 저장소의 Actions 탭에서 확인합니다.
 현재 씬은 동작 없는 빈 노드이며 headless 검사는 로드/임포트 smoke check입니다.
-실제 씬 동작의 통합 테스트는 GdUnit4로 추가하며 Phase 0에는 해당 플러그인을 설치하지 않습니다.
+Phase 5부터 GdUnit4 6.2.1(MIT)을 사용합니다. `./tools/setup_gdunit.ps1`로 설치합니다.
 
 ## 레이어
 
@@ -78,7 +78,7 @@ View는 Sim을 조회하고 Bridge를 통해 명령을 전달합니다.
 
 로컬 검증은 통과했습니다. 에디터 headless 임포트 종료 시 `Scan thread aborted` 경고가 간헐적으로 나타나며
 씬 로드 오류는 없습니다. Phase 0 구현과 로컬 검증을 완료했습니다.
-Phase 1은 별도 승인 후 시작합니다.
+사용자 승인으로 Phase 1~13을 연속 진행하며 완료 조건을 충족한 순서로 커밋합니다.
 
 ## 결정론 코어 계약 (Phase 1)
 
@@ -99,3 +99,13 @@ FNV-1a 해시는 정수의 little-endian 바이트를 사용하며 .NET 객체 �
 AGMP magic, 버전 1, 폭/높이 128, 이후 행 우선 순서로 flags(u8), height(u8), resource ID(i32)를 저장합니다.
 모든 다중 바이트 값은 little-endian입니다. 잘못된 길이/버전/타일은 로더에서 거부합니다.
 SpatialHash는 4타일 셀 후보 ID를 정렬 반환합니다. 정밀 거리 판정은 호출자가 수행합니다.
+
+
+## 명령 및 로컬 선택 (Phase 5)
+명령은 48바이트 고정 little-endian 형식이며 유닛별 대기 큐는 8칸입니다.
+SimWorld는 명령 배열을 틱에 입력받고 읽기 스냅샷과 이벤트 큐를 제공합니다.
+선택은 View에만 저장됩니다. 박스/동종/컨트롤 그룹, Ctrl 토글, 최대 200개 선택을 지원합니다.
+씬 통합 검증: `godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a test/`.
+GdUnit4 6.2.1은 기본적으로 headless를 거부하므로 플래그가 필요합니다.
+테스트는 선택 함수를 직접 호출해 검증하며 OS 마우스 입력 전달은 headless 검증 대상이 아닙니다.
+프레임워크: https://github.com/godot-gdunit-labs/gdUnit4/tree/v6.2.1 (설치본에 MIT LICENSE 포함).

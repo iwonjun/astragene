@@ -5,3 +5,5 @@
 **/obj/
 TestResults/
 logs/
+addons/gdUnit4/
+reports/
