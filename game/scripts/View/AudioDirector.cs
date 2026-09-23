@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Godot;
 using RtsGame.Bridge;
 using RtsGame.Sim.Commands;
@@ -49,7 +49,6 @@ public partial class AudioDirector : Node
         // Stop playback before the scene goes, so no AudioServer playback keeps a stream alive at exit.
         _music.Stop(); _voice.Stop(); _ui.Stop(); foreach (var p in _pool) p.Stop();
         _music.Stream = null; _voice.Stream = null; _ui.Stream = null; foreach (var p in _pool) p.Stream = null;
-        foreach (var stream in _streams.Values) stream.Dispose();
         _streams.Clear();
     }
 
