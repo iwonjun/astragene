@@ -274,3 +274,16 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Pretendard / Roboto Mono는 각 공식 저장소 고정 커밋에서 내려받아 SIL OFL 1.1과 출처를 동봉. HUD 코드 생성 및 CI 재생성 검사에 포함.
 - 생산 상세 조회는 소유자 필터를 통과해야 하며 복사 값만 반환. 항복은 직렬화되는 명령과 해시 상태로 추가; 승패/결과 화면은 Phase 13.
 - Sim 44/44, GdUnit 4/4, 부팅/셰이더 검사 통과. 실제 화면 docs/phase10-hud.png 확인. 기본 실행은 이제 로컬 경기를 연다.
+
+## Phase 11 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Commands/{CommandPacket,TurnManager,ReplayLog}.cs: 고정 바이트 패킷, 정렬된 턴 버퍼/2틱 실행/해시 대조/리플레이 코어와 테스트.
+- game/scripts/Net/{NetworkSession,LockstepRunner,ReplayController}.cs: ENet 단일 reliable 채널, 호스트 중계/멤버십/준비/시드, 대기 UI, RTT 기반 지연 조정, 재생.
+- game/scripts/UI/Lobby.cs, tools/build_lobby.gd: 호스트/IP 접속/진영·맵·준비/시드/시작/리플레이 UI 생성.
+- game/scripts/Bridge/MatchBridge.cs 및 UI/MatchHud.cs: 로컬/네트워크/리플레이 틱 경로, 채팅 및 일시정지 동기화.
+- tools/net_soak.ps1 및 문서: 실제 두 Godot 프로세스 15분 교전, 200ms/2% 손실 전송 실험, 원본/리플레이 매틱 해시 비교 기록.
+- src/Sim/World/SimWorld.cs: 결정론적인 탈퇴 중립화와 진단용 안정 상태 덤프. 게임 UI는 계속 VisibilityFilter만 사용.
+### 완료 조건
+- [ ] 실제 2개 프로세스 15분, desync 0회.
+- [ ] 200ms 지연 + 2% 패킷 손실에서도 플레이, reliable 재전송 확인.
+- [ ] 리플레이 매틱 상태 해시가 원본과 동일.

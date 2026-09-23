@@ -97,7 +97,7 @@ internal sealed class EconomySystem
         for(int i=0;i<s.Capacity;i++)
         {
             var id=s.IdAt(i);if(id==EntityId.None){_constructionLeft[i]=0;_constructionWorker[i]=EntityId.None;continue;}
-            int player=s.Owner[i].Player;
+            int player=s.Owner[i].Player;if(player<0)continue;
             if(s.Type[i].IsBuilding)
             {
                 var d=DefDatabase.Buildings[s.Type[i].Definition];

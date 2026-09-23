@@ -31,7 +31,7 @@ internal sealed class CombatSystem
     {
         for(int i=0;i<s.Capacity;i++)
         {
-            EntityId id=s.IdAt(i);if(id==EntityId.None || s.Type[i].IsBuilding)continue;
+            EntityId id=s.IdAt(i);if(id==EntityId.None || s.Type[i].IsBuilding || s.Owner[i].Player<0)continue;
             UnitDef definition=DefDatabase.Units[s.Type[i].Definition];
             ref CombatComponent combat=ref s.Combat[i];
             if(combat.Cooldown>0)combat.Cooldown--;

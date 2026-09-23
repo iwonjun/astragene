@@ -87,7 +87,18 @@ public sealed class SimWorld
     }
     private bool Accept(Command c)
     {
-        if((uint)c.Player>=4 || _surrendered[c.Player])return false;
+        if((uint)c.Player>=4)return false;
+        if(c.Type==CommandType.Leave)
+        {
+            _surrendered[c.Player]=true;
+            for(int n=0;n<Entities.Capacity;n++)if(Entities.IdAt(n)!=EntityId.None && Entities.Owner[n].Player==c.Player)
+            {
+                Entities.Owner[n].Player=-1;Entities.Movement[n].Active=false;Entities.Combat[n].Target=EntityId.None;Entities.Combat[n].Windup=0;
+                _states[n]=UnitState.Idle;_active[n]=default;_queues[n].Clear();_production.Destroy(n);_economy.Reset(n);
+            }
+            return true;
+        }
+        if(_surrendered[c.Player])return false;
         if(c.Type==CommandType.Surrender){_surrendered[c.Player]=true;Emit(c.Player,"Surrendered",EntityId.None);return true;}
         if((uint)c.Type>(uint)CommandType.Research || !Entities.IsAlive(c.Entity) || Entities.Owner[c.Entity.Index].Player!=c.Player)return false;
         if(c.Target!=EntityId.None && !_vision.CanSee(Entities,c.Player,c.Target))return false;
