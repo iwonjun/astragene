@@ -21,13 +21,15 @@ internal sealed class EconomySystem
     private readonly bool[] _returning;
     private readonly int[] _slots;
     internal static int Rule(int index)=>DefDatabase.Rules[index].Value;
+    // Map convention from tools/gen_map.gd: the sixth and tenth deposit of every ten is a Plasma geyser.
+    internal static bool IsPlasmaNode(int node)=>node%10 is 5 or 9;
     internal EconomySystem(MapData map,int capacity)
     {
         for(int p=0;p<4;p++){Ore[p]=Rule(0);Plasma[p]=Rule(1);}
         int count=0;for(int y=0;y<128;y++)for(int x=0;x<128;x++)count=Math.Max(count,map.Grid[x,y].ResourceNodeId+1);
         _remaining=new int[count];_nodeX=new int[count];_nodeY=new int[count];_gas=new bool[count];_slots=new int[count];
         for(int y=0;y<128;y++)for(int x=0;x<128;x++)
-        {int id=map.Grid[x,y].ResourceNodeId;if(id<0)continue;_nodeX[id]=x;_nodeY[id]=y;_gas[id]=id%10 is 5 or 9;_remaining[id]=Rule(_gas[id]?3:2);}
+        {int id=map.Grid[x,y].ResourceNodeId;if(id<0)continue;_nodeX[id]=x;_nodeY[id]=y;_gas[id]=IsPlasmaNode(id);_remaining[id]=Rule(_gas[id]?3:2);}
         _gatherTimer=new int[capacity];_returning=new bool[capacity];_constructionWorker=new EntityId[capacity];Array.Fill(_constructionWorker,EntityId.None);
         _constructionLeft=new int[capacity];_constructionOre=new int[capacity];_constructionPlasma=new int[capacity];
     }
@@ -35,6 +37,7 @@ internal sealed class EconomySystem
     internal int ConstructionLeft(int index)=>_constructionLeft[index];
     internal int UpgradeAmount(int player,int kind)
     {
+        if((uint)player>=4)return 0; // Neutralized units keep no upgrades.
         int value=0;for(int level=0;level<Upgrades[player,kind];level++)value+=DefDatabase.Upgrades[kind*3+level].Amount;return value;
     }
     internal bool HasTech(EntityStore s,int player,int definition)

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using RtsGame.Bridge;
 using RtsGame.View;
+using RtsGame.Net;
 using RtsGame.Sim.Commands;
 using RtsGame.Sim.Core;
 using RtsGame.Sim.Data;
@@ -49,6 +50,8 @@ public partial class MatchHud : CanvasLayer
         _pause.GetNode<Button>("Keys").Pressed+=()=>{_keyEditor.Show();RefreshKeys();};_keyEditor.GetNode<Button>("Save").Pressed+=()=>{_keys.Save();_keyEditor.Hide();_editingKey=-1;RefreshCards();};
         _pause.GetNode<Button>("Surrender").Pressed+=()=>{_bridge.IsPaused=false;_pause.Hide();_bridge.Issue(new Command(CommandType.Surrender,_bridge.LocalPlayer,EntityId.None,EntityId.None,Fix2.Zero));};
         _chat.TextSubmitted+=text=>{if(!string.IsNullOrWhiteSpace(text)){ReceiveChat(_bridge.LocalPlayer,text,_teamChat);ChatRequested?.Invoke(text,_teamChat);}_chat.Clear();_chat.Hide();_chat.ReleaseFocus();};
+        _pause.GetNode<Button>("Quit").Pressed+=()=>{_bridge.IsPaused=false;GetTree().ChangeSceneToFile("res://game/scenes/lobby.tscn");};
+        if(GetNodeOrNull<LockstepRunner>("../Net") is LockstepRunner runner){ChatRequested+=runner.SendChat;runner.ChatReceived+=ReceiveChat;}
         _alertSound=new AudioStreamPlayer{Stream=GD.Load<AudioStream>("res://game/assets/generated/alert.tres"),VolumeDb=-16};AddChild(_alertSound);
         if(Array.IndexOf(OS.GetCmdlineUserArgs(),"--render-benchmark")>=0 || Array.IndexOf(OS.GetCmdlineUserArgs(),"--art-capture")>=0){Hide();SetProcess(false);SetProcessUnhandledInput(false);return;}
         Refresh();
@@ -90,8 +93,9 @@ public partial class MatchHud : CanvasLayer
         RefreshCards();
         while(_bridge.View.TryDequeueEvent(out var ev))
         {
+            if(ev.Kind=="PlayerLeft")Notify($"P{ev.Entity.Index+1} 플레이어가 나갔습니다. 해당 유닛은 중립화됩니다.");
             if(ev.Kind=="Rejected")Notify("명령을 실행할 수 없습니다. 자원·보급·선행 건물을 확인하세요.");
-            if(ev.Kind is "UnitProduced" or "UpgradeComplete" or "BuildComplete")Notify(ev.Kind=="UpgradeComplete"?"업그레이드 완료":"생산 / 건설 완료",false);
+            if(ev.Kind is "UnitComplete" or "UpgradeComplete" or "BuildComplete")Notify(ev.Kind=="UpgradeComplete"?"업그레이드 완료":"생산 / 건설 완료",false);
         }
         for(int i=0;i<_bridge.View.Capacity;i++)
         {
@@ -163,7 +167,13 @@ public partial class MatchHud : CanvasLayer
     }
     private void CancelQueue(int index){if(_selection.Selected.Count>0)_bridge.Issue(new Command(CommandType.Cancel,_bridge.LocalPlayer,_selection.Selected[0],EntityId.None,Fix2.Zero,index));}
     public void Notify(string text,bool sound=true){_notice.Text=text;_noticeTime=3.5f;_notice.Modulate=Colors.White;if(sound)_alertSound.Play();}
-    private void TogglePause(){if(_surrendered)return;_pause.Visible=!_pause.Visible;_bridge.IsPaused=_pause.Visible;_target=null;}
+    private void TogglePause()
+    {
+        if(_surrendered)return;_pause.Visible=!_pause.Visible;_target=null;
+        // Lockstep peers cannot pause one client alone; the menu opens while the match continues.
+        if(_bridge.Mode==MatchMode.Network){_pause.GetNode<Label>("Status").Text="멀티플레이 경기는 메뉴가 열려 있어도 계속 진행됩니다.";return;}
+        _bridge.IsPaused=_pause.Visible;
+    }
     private void RefreshKeys(){for(int i=0;i<12;i++)_keyButtons[i].Text=$"{i+1}  [{_keys[i]}]";}
     public void ReceiveChat(int player,string text,bool team)
     {

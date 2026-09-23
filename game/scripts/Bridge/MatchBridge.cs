@@ -5,6 +5,8 @@ using RtsGame.Sim.Commands;
 using RtsGame.Sim.Core;
 using RtsGame.Sim.Entities;
 using RtsGame.Sim.World;
+using RtsGame.Net;
+using RtsGame.Sim.Ai;
 
 namespace RtsGame.Bridge;
 
@@ -16,26 +18,46 @@ public partial class MatchBridge : Node
     private readonly List<Command> _pending=new();
     public int LocalPlayer {get;set;}
     public bool IsPaused {get;set;}
+    public MatchMode Mode {get;private set;}=MatchMode.Local;
+    public LockstepRunner? Runner {get;private set;}
+    /// <summary>Local matches record every tick, so they can be replayed exactly like network matches.</summary>
+    public ReplayLog? LocalReplay {get;private set;}
     public override void _Ready()=>ResetMatch();
     public void ResetMatch()
     {
-        var bytes=FileAccess.GetFileAsBytes("res://game/maps/duel.map");
-        var spawns=new List<SpawnSpec>();
-        for(int player=0;player<2;player++)
+        var map=MapLoader.Load(FileAccess.GetFileAsBytes(MatchLaunch.MapPath));
+        Mode=MatchLaunch.Mode;Runner=GetNodeOrNull<LockstepRunner>("../Net");
+        if(Mode==MatchMode.Replay)return; // ReplayController supplies worlds.
+        var spawns=MatchSetup.Spawns(MatchLaunch.Factions);
+        if(Mode==MatchMode.Network && MatchLaunch.Session is NetworkSession session && Runner!=null)
         {
-            int baseCoordinate=player==0?20:107;
-            spawns.Add(new SpawnSpec(player,player==0?0:6,true,new Fix2(Fix64.FromInt(baseCoordinate),Fix64.FromInt(baseCoordinate))));
-            for(int i=0;i<6;i++)spawns.Add(new SpawnSpec(player,player==0?0:5,false,new Fix2(Fix64.FromInt(baseCoordinate-4+i),Fix64.FromInt(baseCoordinate+4))));
+            LocalPlayer=session.LocalPlayer;var world=new SimWorld(map,spawns,MatchLaunch.Seed);
+            Initialize(world);Runner.Begin(world,session);return;
         }
-        Initialize(new SimWorld(MapLoader.Load(bytes),spawns.ToArray()));
+        Mode=MatchMode.Local;LocalPlayer=MatchLaunch.LocalPlayer;
+        // Local matches seat the computer opponent inside the simulation, so replays reproduce it exactly.
+        var ai=MatchLaunch.AiDifficulty is >=0 and <=2?new[]{new AiSeat(1-LocalPlayer,(AiDifficulty)MatchLaunch.AiDifficulty)}:null;
+        Initialize(new SimWorld(map,spawns,MatchLaunch.Seed,ai:ai));
+        LocalReplay=new ReplayLog(map,spawns,MatchLaunch.Seed,ai:ai);
     }
     public override void _PhysicsProcess(double delta)
     {
-        if(World==null || IsPaused)return;
-        World.Tick(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_pending));_pending.Clear();
+        if(World==null || IsPaused || Mode!=MatchMode.Local)return;
+        var commands=System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_pending);
+        World.Tick(commands);
+        if(LocalReplay!=null && ReferenceEquals(LocalReplay.Map,World.Map) && LocalReplay.TickCount==World.TickNumber-1)LocalReplay.Append(commands,World.Hash());
+        _pending.Clear();
     }
-    internal void Initialize(SimWorld world) { World=world; _view=null; _pending.Clear(); }
-    public void Issue(Command command)=>_pending.Add(command);
+    internal void Initialize(SimWorld world) { World=world; _view=null; _pending.Clear(); LocalReplay=null; }
+    internal void InitializeReplay(SimWorld world,int viewer) { Mode=MatchMode.Replay; LocalPlayer=viewer; Initialize(world); }
+    public void Issue(Command command)
+    {
+        if(Mode==MatchMode.Replay)return;
+        if(Mode==MatchMode.Network){Runner?.QueueLocal(command);return;}
+        _pending.Add(command);
+    }
+    public string SaveLocalReplay()=>LocalReplay==null || LocalReplay.TickCount==0?"":MatchLaunch.SaveReplay(LocalReplay);
+    public override void _ExitTree(){if(Mode==MatchMode.Local && !MatchLaunch.Flag("render-benchmark") && !MatchLaunch.Flag("art-capture"))SaveLocalReplay();}
     public EntityId PickEntity(Vector3 point)
     {
         EntityId result=EntityId.None;float best=1.8f;

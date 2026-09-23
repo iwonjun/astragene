@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using RtsGame.Sim.Ai;
 using RtsGame.Sim.Commands;
 using RtsGame.Sim.Core;
 using RtsGame.Sim.Data;
@@ -29,9 +32,16 @@ public sealed class SimWorld
     private readonly Queue<SimEvent> _events=new();
     private DetRandom _random;
     private readonly bool[] _surrendered=new bool[4];
-    public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024,int? initialOre=null,int? initialPlasma=null)
+    private readonly ulong _mapHash;
+    private readonly AiPlayer[] _ai;
+    private readonly AiSeat[] _aiSeats;
+    private readonly VisibilityFilter?[] _aiViews=new VisibilityFilter?[4];
+    public ReadOnlySpan<AiSeat> AiSeats=>_aiSeats;
+    public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024,int? initialOre=null,int? initialPlasma=null,AiSeat[]? ai=null)
     {
-        Map=map; Entities=new EntityStore(capacity); _random=new DetRandom(seed);
+        _aiSeats=ai==null?Array.Empty<AiSeat>():(AiSeat[])ai.Clone();_ai=new AiPlayer[_aiSeats.Length];
+        for(int n=0;n<_aiSeats.Length;n++){for(int m=0;m<n;m++)if(_aiSeats[m].Player==_aiSeats[n].Player)throw new ArgumentException("Duplicate AI seat.");_ai[n]=new AiPlayer(_aiSeats[n],capacity);}
+        Map=map; _mapHash=map.Hash(); Entities=new EntityStore(capacity); _random=new DetRandom(seed);
         _movement=new MovementSystem(map.Grid,capacity); _combat=new CombatSystem(capacity); _vision=new VisionSystem(capacity); _economy=new EconomySystem(map,capacity); _production=new ProductionSystem(capacity);
         _queues=new CommandQueue[capacity]; _states=new UnitState[capacity]; _active=new Command[capacity]; _patrolOrigin=new Fix2[capacity];
         for(int i=0;i<capacity;i++)_queues[i]=new CommandQueue();
@@ -66,6 +76,13 @@ public sealed class SimWorld
     public void Tick(ReadOnlySpan<Command> commands)
     {
         foreach(Command command in commands)if(!Accept(command))Emit(command.Player,"Rejected",command.Entity);
+        // Computer players decide from their filtered view and submit ordinary commands through Accept.
+        foreach(var ai in _ai)
+        {
+            if(!ai.ShouldThink(_clock.Tick))continue;
+            var view=_aiViews[ai.Player]??=ViewFor(ai.Player);
+            foreach(Command command in ai.Think(view,Map,_clock.Tick))Accept(command);
+        }
         for(int i=0;i<Entities.Capacity;i++)
         {
             var id=Entities.IdAt(i);if(id==EntityId.None)continue;
@@ -96,6 +113,7 @@ public sealed class SimWorld
                 Entities.Owner[n].Player=-1;Entities.Movement[n].Active=false;Entities.Combat[n].Target=EntityId.None;Entities.Combat[n].Windup=0;
                 _states[n]=UnitState.Idle;_active[n]=default;_queues[n].Clear();_production.Destroy(n);_economy.Reset(n);
             }
+            for(int p=0;p<4;p++)Emit(p,"PlayerLeft",new EntityId(c.Player,0));
             return true;
         }
         if(_surrendered[c.Player])return false;
@@ -135,9 +153,37 @@ public sealed class SimWorld
         int player=Entities.Owner[id.Index].Player;
         if(Entities.Destroy(id)){_production.Destroy(id.Index);_economy.Reset(id.Index);_queues[id.Index].Clear();_states[id.Index]=UnitState.Idle;_events.Enqueue(new(_clock.Tick,player,"Death",id));}
     }
+    /// <summary>Diagnostic JSON for desync reports. Integers and Q32.32 raw values only; never read by gameplay.</summary>
+    public string DumpState()
+    {
+        var b=new StringBuilder(4096);
+        b.Append("{\"tick\":").Append(Str(_clock.Tick)).Append(",\"hash\":\"").Append(Hash().ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        b.Append(",\"entitiesHash\":\"").Append(Entities.Hash().ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        var h=new WorldHasher();_vision.Hash(ref h);b.Append(",\"visionHash\":\"").Append(h.Value.ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        h=new WorldHasher();_combat.Hash(ref h);b.Append(",\"combatHash\":\"").Append(h.Value.ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        h=new WorldHasher();_economy.Hash(ref h);b.Append(",\"economyHash\":\"").Append(h.Value.ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        h=new WorldHasher();_production.Hash(ref h);b.Append(",\"productionHash\":\"").Append(h.Value.ToString("x16",CultureInfo.InvariantCulture)).Append('"');
+        b.Append(",\"players\":[");
+        for(int p=0;p<4;p++)
+        {
+            var r=Resources(p);if(p>0)b.Append(',');
+            b.Append("{\"ore\":").Append(Str(r.Ore)).Append(",\"plasma\":").Append(Str(r.Plasma)).Append(",\"supply\":").Append(Str(r.UsedSupply)).Append(",\"maxSupply\":").Append(Str(r.MaxSupply)).Append(",\"surrendered\":").Append(_surrendered[p]?"true":"false").Append('}');
+        }
+        b.Append("],\"entities\":[");bool first=true;
+        for(int i=0;i<Entities.Capacity;i++)
+        {
+            var id=Entities.IdAt(i);if(id==EntityId.None)continue;if(!first)b.Append(',');first=false;
+            b.Append("{\"index\":").Append(Str(i)).Append(",\"generation\":").Append(Str(id.Generation)).Append(",\"owner\":").Append(Str(Entities.Owner[i].Player));
+            b.Append(",\"building\":").Append(Entities.Type[i].IsBuilding?"true":"false").Append(",\"definition\":").Append(Str(Entities.Type[i].Definition));
+            b.Append(",\"x\":").Append(Str(Entities.Transform[i].Position.X.Raw)).Append(",\"y\":").Append(Str(Entities.Transform[i].Position.Y.Raw));
+            b.Append(",\"health\":").Append(Str(Entities.Health[i].Current.Raw)).Append(",\"state\":\"").Append(_states[i].ToString()).Append("\",\"queued\":").Append(Str(_queues[i].Count)).Append('}');
+        }
+        return b.Append("]}").ToString();
+    }
+    private static string Str(long value)=>value.ToString(CultureInfo.InvariantCulture);
     public ulong Hash()
     {
-        var h=new WorldHasher();h.AddUInt64(Map.Hash());h.AddUInt64(Entities.Hash());h.AddInt64(_clock.Tick);
+        var h=new WorldHasher();h.AddUInt64(_mapHash);h.AddUInt64(Entities.Hash());h.AddInt64(_clock.Tick);
         h.AddUInt64(_random.State0);h.AddUInt64(_random.State1);
         for(int player=0;player<4;player++)h.AddByte(_surrendered[player]?(byte)1:(byte)0);
         Span<byte> bytes=stackalloc byte[Command.ByteSize];
@@ -147,6 +193,7 @@ public sealed class SimWorld
             h.AddInt32((int)_states[i]);_queues[i].Hash(ref h);_active[i].Write(bytes);h.Add(bytes);h.AddFix2(_patrolOrigin[i]);
         }
         _vision.Hash(ref h); _combat.Hash(ref h); _economy.Hash(ref h); _production.Hash(ref h);
+        foreach(var ai in _ai)ai.Hash(ref h);
         return h.Value;
     }
 }

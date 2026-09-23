@@ -30,6 +30,14 @@ func _initialize() -> void:
         if scene_name == "match":
             content=content.replace('[node name="Match"','[ext_resource type="PackedScene" path="res://game/scenes/hud.tscn" id="7"]\n\n[node name="Match"')
             content+='\n[node name="HUD" parent="." unique_id=1008 instance=ExtResource("7")]\n'
+            content=content.replace('[node name="Match"','[ext_resource type="Script" path="res://game/scripts/Net/LockstepRunner.cs" id="8"]\n\n[node name="Match"')
+            content+='\n[node name="Net" type="Node" parent="." unique_id=1009]\nscript = ExtResource("8")\n'
+        if scene_name == "lobby":
+            content=content.replace('[node name="Lobby" type="Node"','[ext_resource type="PackedScene" path="res://game/scenes/lobby_ui.tscn" id="1"]\n\n[node name="Lobby" type="Node"')
+            content+='\n[node name="UI" parent="." unique_id=1101 instance=ExtResource("1")]\n'
+        if scene_name == "replay":
+            content=content.replace('[node name="Replay"','[ext_resource type="Script" path="res://game/scripts/Net/ReplayController.cs" id="1"]\n\n[node name="Replay"')
+            content+='script = ExtResource("1")\n'
         if scene_name == "boot":
             content=content.replace('[node name="Boot"','[ext_resource type="Script" path="res://game/scripts/UI/BootMenu.cs" id="1"]\n\n[node name="Boot"')
             content+='script = ExtResource("1")\n'

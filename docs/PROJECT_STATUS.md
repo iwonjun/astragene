@@ -19,11 +19,13 @@
 | Phase 8 | 완료 | 시야 카운터, 탐색 유지, 차폐, 은폐·탐지, 유령 건물 |
 | Phase 9 | 완료 | 10종 유닛·2진영 건물, 툰/림 셰이더, 지형·안개, MultiMesh, VFX, 카메라 |
 | Phase 10 | 완료 | 자원 HUD, 미니맵, 선택·생산 패널, 명령 카드, 건설 미리보기, 채팅, 일시정지, 항복, 단축키 |
+| Phase 11 | 완료 | ENet 락스텝, 로비·시드 합의, 대기 오버레이, 해시 검증·desync 덤프, 리플레이 |
+| Phase 12 | 완료 | 결정론 AI 3단계(Easy/Medium/Hard), 계층형 두뇌·매니저·마이크로 |
 
 ## 검증 결과
 
-- 순수 Sim 테스트 44/44 통과.
-- Godot 통합 테스트 4/4 통과.
+- 순수 Sim 테스트 56/56 통과.
+- Godot 통합 테스트 6/6 통과.
 - Debug C# 빌드 경고 0개, 오류 0개.
 - Phase 9 실제 GPU 측정: RTX 4060 Ti / Forward+ / 1600×900에서 400기 표시 구간 평균 0.9503ms, 최대 드로우콜 31회.
 - 화면 결과: `docs/phase9-1.png`, `docs/phase9-2.png`, `docs/phase9-3.png`, `docs/phase10-hud.png`.
@@ -32,22 +34,9 @@
 
 ## 현재 진행 중
 
-Phase 11 멀티플레이 코어 초안을 진행 커밋으로 올렸다. 고정 바이트 `CommandPacket`, 턴 버퍼, 리플레이 파일 포맷, 탈퇴 명령과 콘텐츠 해시 기반을 추가했으며 빌드와 기존 44개 Sim 테스트는 통과한다. 아직 ENet 세션·로비·대기 오버레이·리플레이 UI와 실제 네트워크 검증이 남아 있어 완료로 표시하지 않았다.
+Phase 13 폴리싱. Phase 11 검증은 docs/phase11-validation.md(두 프로세스 15분, 무손실·200ms+2% 손실 모두 desync 0).
 
 ## 남은 작업
-
-### Phase 11 — 멀티플레이와 리플레이
-
-- ENet 단일 reliable 채널, 직접 IP 로비, 진영·맵·준비·시드 합의.
-- 패킷 도착 전 대기 표시, 10틱 해시 검증, `logs/desync_{tick}.json` 덤프.
-- 200ms 지연·2% 손실 테스트, 2개 프로세스 15분 무 desync 테스트.
-- 원본과 리플레이의 틱별 해시 일치.
-
-### Phase 12 — 결정론 스킬미시 AI
-
-- StrategyBrain → Economy/Production/ArmyManager → 유닛 미시 계층.
-- Easy/Medium/Hard 난이도와 정찰 기반 대응.
-- AI는 `VisibilityFilter`로 관찰하고 `Command`만 발행하며 치트를 사용하지 않음.
 
 ### Phase 13 — 폴리싱과 출시 빌드
 

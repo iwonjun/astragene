@@ -1,4 +1,5 @@
 using System;
+using RtsGame.Sim.Commands;
 using RtsGame.Sim.Entities;
 using RtsGame.Sim.Systems;
 
@@ -19,6 +20,8 @@ public sealed class VisibilityFilter
     public ProductionOrder ProductionAt(EntityId id,int index)=>TryGet(id,out var e)&&e.Owner.Player==Player?_world.ProductionAt(id,index):new ProductionOrder(-1,0,false);
     public int ConstructionTicks(EntityId id)=>TryGet(id,out var e)&&e.Owner.Player==Player?_world.ConstructionTicks(id):0;
     public PlayerResources Resources=>_world.Resources(Player);
+    /// <summary>Order state of the viewer's own units; other players' orders are never exposed.</summary>
+    public UnitState OwnState(EntityId id)=>TryGet(id,out var e)&&e.Owner.Player==Player?_world.State(id):UnitState.Idle;
     public bool TryDequeueEvent(out SimEvent value){while(_world.TryDequeueEvent(out value))if(value.Player==Player)return true;return false;}
     public Visibility At(int x,int y)=>_vision.At(Player,x,y);
     public EntityId IdAt(int index){var id=_store.IdAt(index);return _vision.CanSee(_store,Player,id)?id:EntityId.None;}

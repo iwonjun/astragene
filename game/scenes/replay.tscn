@@ -1,3 +1,6 @@
 [gd_scene format=3 uid="uid://hhw5g0lvncd3"]
 
+[ext_resource type="Script" path="res://game/scripts/Net/ReplayController.cs" id="1"]
+
 [node name="Replay" type="Node" unique_id=118082913]
+script = ExtResource("1")

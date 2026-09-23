@@ -1,3 +1,7 @@
 [gd_scene format=3 uid="uid://f318i24u6g2p"]
 
+[ext_resource type="PackedScene" path="res://game/scenes/lobby_ui.tscn" id="1"]
+
 [node name="Lobby" type="Node" unique_id=95550164]
+
+[node name="UI" parent="." unique_id=1101 instance=ExtResource("1")]

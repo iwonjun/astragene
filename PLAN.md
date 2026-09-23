@@ -284,6 +284,41 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - tools/net_soak.ps1 및 문서: 실제 두 Godot 프로세스 15분 교전, 200ms/2% 손실 전송 실험, 원본/리플레이 매틱 해시 비교 기록.
 - src/Sim/World/SimWorld.cs: 결정론적인 탈퇴 중립화와 진단용 안정 상태 덤프. 게임 UI는 계속 VisibilityFilter만 사용.
 ### 완료 조건
-- [ ] 실제 2개 프로세스 15분, desync 0회.
-- [ ] 200ms 지연 + 2% 패킷 손실에서도 플레이, reliable 재전송 확인.
-- [ ] 리플레이 매틱 상태 해시가 원본과 동일.
+- [x] 실제 2개 프로세스 15분, desync 0회.
+- [x] 200ms 지연 + 2% 패킷 손실에서도 플레이, reliable 재전송 확인.
+- [x] 리플레이 매틱 상태 해시가 원본과 동일.
+
+### Phase 11 구현 보완 (현재 세션)
+- src/Sim/Commands/LockstepSession.cs: 전송 계층과 무관한 락스텝 구동기. 턴마다 플레이어당 패킷 정확히 1개, 1턴=2틱, 지연 2~6턴을 각자 적응형으로 변경(증가 시 빈 턴 추가 송신, 감소 시 송신 생략). 턴 S 패킷에 턴 S-6 시작 시점 해시(5턴=10틱 체크포인트)를 실어 대조.
+- src/Sim/Commands/SessionMessage.cs: 로비/제어 메시지를 turn -1 CommandPacket의 Session 명령에 담는 코덱(Hello/Assign/Lobby/SetFaction/SetReady/Start/Leave/Chat/Reject). 채팅은 24바이트 UTF-8 청크.
+- src/Sim/Commands/ReplayLog.cs, ReplayPlayer.cs: 틱 단위 명령 스트림+틱별 해시, 맵/스폰/시드/콘텐츠 해시 포함. 되감기는 초기 상태부터 재시뮬레이션.
+- src/Sim/World/SimWorld.cs: DumpState(desync 진단 JSON), 탈퇴 이벤트, 맵 해시 캐시. src/Sim/Systems/VisionSystem.cs: 시야 격자 해시를 증분 가중합으로 교체(틱별 해시 비용 절감). EconomySystem: 중립 소유자 업그레이드 조회 방어.
+- game/scripts/Net/{NetworkSession,LockstepRunner,ReplayController,MatchLaunch,SoakBot}.cs: ENet 단일 reliable 채널과 PacketPeer 직접 바이트 전송(RPC/동기화 노드 미사용), 호스트 중계·좌석 배정·콘텐츠/맵 해시 확인·시드 합의, 대기 오버레이, RTT 기반 지연, desync 시 정지와 logs/desync_{tick}.json(프로세스별 섹션 병합), 리플레이 1/2/4/8배속·일시정지·시점 전환·매틱 검증.
+- game/scripts/UI/Lobby.cs, tools/build_ui.gd(lobby_ui.tscn), tools/build_scenes.gd: 로비/리플레이 씬 코드 생성, boot → 로비.
+- tools/udp_lossy_proxy.gd, tools/net_soak.ps1: 방향별 지연·손실 UDP 프록시와 두 프로세스 soak + 리플레이 검증 자동화.
+- 한계: 호스트가 나가면 중계가 끊겨 경기가 중단된다(재접속·호스트 이전은 범위 밖). 동맹이 없으므로 팀 채팅은 본인에게만 표시. 멀티플레이 일시정지 메뉴는 경기를 멈추지 않는다.
+
+## Phase 12 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Ai/AiContext.cs: 난이도 프로필과 VisibilityFilter 기반 인지 스냅샷(아군/보이는 적/유령 건물/자원). 인덱스 순서 리스트만 사용.
+- src/Sim/Ai/StrategyBrain.cs: 정찰 기억(방어 타입별 최대 관측 공급), 기지 위협 감지와 난이도별 반응 지연, 공격 목표, 편성 가중치(Hard는 관측 방어 타입에 맞춰 역상성 편성).
+- src/Sim/Ai/EconomyManager.cs, ProductionManager.cs, ArmyManager.cs: 일꾼 분배/가스, 우선순위 빌드오더와 예산 보류, 부지 탐색과 실패 부지 기억, 집결/방어/공격 웨이브, 점사·후퇴 마이크로, Hard 일꾼 정찰.
+- src/Sim/Ai/AiPlayer.cs, src/Sim/World/SimWorld.cs: AI 좌석을 월드 생성 인자로 받고 틱마다 필터 조회 후 명령을 일반 Accept 경로로 제출. AI 상태를 월드 해시에 포함.
+- src/Sim/World/VisibilityFilter.cs: 자기 유닛 명령 상태 조회(OwnState)만 추가. src/Sim/Commands/ReplayLog.cs: AI 좌석 저장(버전 3).
+- game/scripts/Bridge/MatchBridge.cs, UI/Lobby.cs: 로컬 대전에 선택 난이도 AI 좌석 연결.
+- tests/Sim.Tests/AiTests.cs: 난이도별 빌드오더·공격, Hard>Easy 양 진영, AI 대 AI 결정론/리플레이, 필터 외 접근 부재와 자원 치트 부재.
+### Phase 11 완료
+- 두 프로세스 15분: 무손실/200ms+2% 손실 모두 desync 0, 체크포인트 1800회 대조, 리플레이 양쪽 18000틱 일치. 상세 docs/phase11-validation.md.
+- Sim 테스트 49개(네트워크 5개 추가), GdUnit 6개(ENet 루프백 로비·채팅·락스텝·탈퇴, 로비/리플레이 씬) 통과.
+
+### 완료 조건
+- [x] 모든 난이도가 빈 상대를 상대로 일꾼/병영/병력 생산 후 공격, Hard는 15분 내 전멸.
+- [x] Hard가 두 진영 조합에서 Easy를 이긴다(LUMINA 379초, VERGE 401초에 Easy 전 건물 파괴).
+- [x] AI 포함 경기가 동일 입력에서 해시 일치, 리플레이 매틱 일치.
+- [x] AI 코드가 SimWorld/EntityStore를 보유·참조하지 않고 Command만 발행.
+
+### Phase 12 완료
+- Sim 56/56, GdUnit 6/6 통과. 로비의 "AI와 대전"에서 쉬움/보통/어려움 선택, `godot -- --local --ai=2`로 직접 실행.
+- 난이도 차이는 판단 주기(40/20/10틱), 위협 반응 지연, 목표 일꾼·병영 수, 점사/후퇴/정찰/역상성, 업그레이드 단계뿐이며 자원·시야 보정은 없다.
+- 알려진 한계: 확장 기지를 짓지 않는다. 방어탑은 현재 전투 시스템이 건물 공격을 지원하지 않아 AI도 짓지 않는다(Phase 13 후보).
+

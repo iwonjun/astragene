@@ -10,6 +10,8 @@
 
 [ext_resource type="PackedScene" path="res://game/scenes/hud.tscn" id="7"]
 
+[ext_resource type="Script" path="res://game/scripts/Net/LockstepRunner.cs" id="8"]
+
 [node name="Match" type="Node" unique_id=67472705]
 
 [node name="Bridge" type="Node" parent="." unique_id=1001]
@@ -36,3 +38,6 @@ light_energy = 1.0
 script = ExtResource("6")
 
 [node name="HUD" parent="." unique_id=1008 instance=ExtResource("7")]
+
+[node name="Net" type="Node" parent="." unique_id=1009]
+script = ExtResource("8")

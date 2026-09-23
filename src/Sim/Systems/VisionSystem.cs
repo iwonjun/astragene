@@ -18,6 +18,9 @@ internal sealed class VisionSystem
     private static readonly int[][] Circles=MakeCircles();
     private readonly EntitySnapshot[,] _lastBuildings;
     private readonly bool[,] _knownBuildings;
+    // Incrementally maintained weighted sums of the count grids, so hashing is O(capacity) instead of O(tiles).
+    private readonly ulong[] _countSum=new ulong[4],_detectorSum=new ulong[4],_exploredSum=new ulong[4];
+    private static ulong Weight(int tile)=>unchecked(((ulong)tile+1)*0x9E3779B97F4A7C15UL);
     internal int StampUpdates {get;private set;}
     internal VisionSystem(int capacity)
     {
@@ -53,7 +56,7 @@ internal sealed class VisionSystem
             int radius=alive?store.Vision[i].Radius:0;bool detector=alive&&store.Vision[i].Detector;
             if(radius<0||radius>32)throw new InvalidOperationException("Vision radius must be within 0..32.");
             if(_owner[i]==player&&_x[i]==x&&_y[i]==y&&_generation[i]==id.Generation&&_radius[i]==radius&&_detector[i]==detector)continue;
-            if(_owner[i]>=0)foreach(int tile in _stamps[i]){_counts[_owner[i],tile]--;if(_detector[i])_detectors[_owner[i],tile]--;}
+            if(_owner[i]>=0)foreach(int tile in _stamps[i]){int o=_owner[i];_counts[o,tile]--;_countSum[o]=unchecked(_countSum[o]-Weight(tile));if(_detector[i]){_detectors[o,tile]--;_detectorSum[o]=unchecked(_detectorSum[o]-Weight(tile));}}
             _stamps[i].Clear();_owner[i]=player;_x[i]=x;_y[i]=y;_generation[i]=id.Generation;_radius[i]=radius;_detector[i]=detector;
             if(!alive||player<0||player>=4)continue;
             StampUpdates++;
@@ -61,7 +64,9 @@ internal sealed class VisionSystem
             for(int n=0;n<circle.Length;n+=2)
             {
                 int tx=x+circle[n],ty=y+circle[n+1];if(!Grid.Contains(tx,ty)||!LineVisible(map.Grid,x,y,tx,ty))continue;
-                int tile=ty*128+tx;_counts[player,tile]++;_explored[player,tile]=true;if(detector)_detectors[player,tile]++;_stamps[i].Add(tile);
+                int tile=ty*128+tx;_counts[player,tile]++;_countSum[player]=unchecked(_countSum[player]+Weight(tile));
+                if(!_explored[player,tile]){_explored[player,tile]=true;_exploredSum[player]=unchecked(_exploredSum[player]+Weight(tile));}
+                if(detector){_detectors[player,tile]++;_detectorSum[player]=unchecked(_detectorSum[player]+Weight(tile));}_stamps[i].Add(tile);
             }
         }
         for(int p=0;p<4;p++)for(int i=0;i<store.Capacity;i++)
@@ -91,7 +96,7 @@ internal sealed class VisionSystem
     {
         for(int p=0;p<4;p++)
         {
-            for(int i=0;i<128*128;i++){h.AddInt32(_counts[p,i]);h.AddInt32(_detectors[p,i]);h.AddByte(_explored[p,i]?(byte)1:(byte)0);}
+            h.AddUInt64(_countSum[p]);h.AddUInt64(_detectorSum[p]);h.AddUInt64(_exploredSum[p]);
             for(int i=0;i<_stamps.Length;i++)
             {h.AddByte(_knownBuildings[p,i]?(byte)1:(byte)0);if(!_knownBuildings[p,i])continue;var s=_lastBuildings[p,i];h.AddInt32(s.Id.Index);h.AddUInt64(s.Id.Generation);h.AddFix2(s.Transform.Position);h.AddFix(s.Health.Current);h.AddInt32(s.Type.Definition);h.AddInt32(s.Owner.Player);}
         }

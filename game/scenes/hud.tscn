@@ -379,9 +379,9 @@ placeholder_text = "전체 메시지 (Tab: 팀/전체)"
 
 [node name="Pause" type="Control" parent="Root" unique_id=2045]
 offset_left = 510.0
-offset_top = 245.0
+offset_top = 215.0
 offset_right = 930.0
-offset_bottom = 585.0
+offset_bottom = 615.0
 
 
 [node name="Glass" type="ColorRect" parent="Root/Pause" unique_id=2046]
@@ -425,23 +425,31 @@ offset_bottom = 261.0
 text = "항복"
 focus_mode = 0
 
-[node name="Status" type="Label" parent="Root/Pause" unique_id=2051]
+[node name="Quit" type="Button" parent="Root/Pause" unique_id=2051]
 offset_left = 30.0
-offset_top = 274.0
+offset_top = 273.0
 offset_right = 390.0
-offset_bottom = 322.0
+offset_bottom = 321.0
+text = "로비로 나가기"
+focus_mode = 0
+
+[node name="Status" type="Label" parent="Root/Pause" unique_id=2052]
+offset_left = 30.0
+offset_top = 334.0
+offset_right = 390.0
+offset_bottom = 382.0
 text = ""
 theme_override_font_sizes/font_size = 14
 mouse_filter = 2
 
-[node name="KeyEditor" type="Control" parent="Root" unique_id=2052]
+[node name="KeyEditor" type="Control" parent="Root" unique_id=2053]
 offset_left = 420.0
 offset_top = 178.0
 offset_right = 1020.0
 offset_bottom = 638.0
 
 
-[node name="Glass" type="ColorRect" parent="Root/KeyEditor" unique_id=2053]
+[node name="Glass" type="ColorRect" parent="Root/KeyEditor" unique_id=2054]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -449,7 +457,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 material = SubResource("Glass")
 
-[node name="Title" type="Label" parent="Root/KeyEditor" unique_id=2054]
+[node name="Title" type="Label" parent="Root/KeyEditor" unique_id=2055]
 offset_left = 24.0
 offset_top = 20.0
 offset_right = 576.0
@@ -458,7 +466,7 @@ text = "단축키 설정 · 칸을 눌러 키 입력"
 theme_override_font_sizes/font_size = 22
 mouse_filter = 2
 
-[node name="Key0" type="Button" parent="Root/KeyEditor" unique_id=2055]
+[node name="Key0" type="Button" parent="Root/KeyEditor" unique_id=2056]
 offset_left = 24.0
 offset_top = 82.0
 offset_right = 154.0
@@ -466,7 +474,7 @@ offset_bottom = 144.0
 text = ""
 focus_mode = 0
 
-[node name="Key1" type="Button" parent="Root/KeyEditor" unique_id=2056]
+[node name="Key1" type="Button" parent="Root/KeyEditor" unique_id=2057]
 offset_left = 162.0
 offset_top = 82.0
 offset_right = 292.0
@@ -474,7 +482,7 @@ offset_bottom = 144.0
 text = ""
 focus_mode = 0
 
-[node name="Key2" type="Button" parent="Root/KeyEditor" unique_id=2057]
+[node name="Key2" type="Button" parent="Root/KeyEditor" unique_id=2058]
 offset_left = 300.0
 offset_top = 82.0
 offset_right = 430.0
@@ -482,7 +490,7 @@ offset_bottom = 144.0
 text = ""
 focus_mode = 0
 
-[node name="Key3" type="Button" parent="Root/KeyEditor" unique_id=2058]
+[node name="Key3" type="Button" parent="Root/KeyEditor" unique_id=2059]
 offset_left = 438.0
 offset_top = 82.0
 offset_right = 568.0
@@ -490,7 +498,7 @@ offset_bottom = 144.0
 text = ""
 focus_mode = 0
 
-[node name="Key4" type="Button" parent="Root/KeyEditor" unique_id=2059]
+[node name="Key4" type="Button" parent="Root/KeyEditor" unique_id=2060]
 offset_left = 24.0
 offset_top = 160.0
 offset_right = 154.0
@@ -498,7 +506,7 @@ offset_bottom = 222.0
 text = ""
 focus_mode = 0
 
-[node name="Key5" type="Button" parent="Root/KeyEditor" unique_id=2060]
+[node name="Key5" type="Button" parent="Root/KeyEditor" unique_id=2061]
 offset_left = 162.0
 offset_top = 160.0
 offset_right = 292.0
@@ -506,7 +514,7 @@ offset_bottom = 222.0
 text = ""
 focus_mode = 0
 
-[node name="Key6" type="Button" parent="Root/KeyEditor" unique_id=2061]
+[node name="Key6" type="Button" parent="Root/KeyEditor" unique_id=2062]
 offset_left = 300.0
 offset_top = 160.0
 offset_right = 430.0
@@ -514,7 +522,7 @@ offset_bottom = 222.0
 text = ""
 focus_mode = 0
 
-[node name="Key7" type="Button" parent="Root/KeyEditor" unique_id=2062]
+[node name="Key7" type="Button" parent="Root/KeyEditor" unique_id=2063]
 offset_left = 438.0
 offset_top = 160.0
 offset_right = 568.0
@@ -522,7 +530,7 @@ offset_bottom = 222.0
 text = ""
 focus_mode = 0
 
-[node name="Key8" type="Button" parent="Root/KeyEditor" unique_id=2063]
+[node name="Key8" type="Button" parent="Root/KeyEditor" unique_id=2064]
 offset_left = 24.0
 offset_top = 238.0
 offset_right = 154.0
@@ -530,7 +538,7 @@ offset_bottom = 300.0
 text = ""
 focus_mode = 0
 
-[node name="Key9" type="Button" parent="Root/KeyEditor" unique_id=2064]
+[node name="Key9" type="Button" parent="Root/KeyEditor" unique_id=2065]
 offset_left = 162.0
 offset_top = 238.0
 offset_right = 292.0
@@ -538,7 +546,7 @@ offset_bottom = 300.0
 text = ""
 focus_mode = 0
 
-[node name="Key10" type="Button" parent="Root/KeyEditor" unique_id=2065]
+[node name="Key10" type="Button" parent="Root/KeyEditor" unique_id=2066]
 offset_left = 300.0
 offset_top = 238.0
 offset_right = 430.0
@@ -546,7 +554,7 @@ offset_bottom = 300.0
 text = ""
 focus_mode = 0
 
-[node name="Key11" type="Button" parent="Root/KeyEditor" unique_id=2066]
+[node name="Key11" type="Button" parent="Root/KeyEditor" unique_id=2067]
 offset_left = 438.0
 offset_top = 238.0
 offset_right = 568.0
@@ -554,7 +562,7 @@ offset_bottom = 300.0
 text = ""
 focus_mode = 0
 
-[node name="Save" type="Button" parent="Root/KeyEditor" unique_id=2067]
+[node name="Save" type="Button" parent="Root/KeyEditor" unique_id=2068]
 offset_left = 24.0
 offset_top = 355.0
 offset_right = 576.0

@@ -78,18 +78,20 @@ script = ExtResource("7")')
  label("Help","Root","WASD 이동  ·  휠 줌  ·  Ctrl+숫자 그룹  ·  Enter 채팅",350,591,740,28,14)
  label("ChatLog","Root","",24,395,560,150,16)
  node("ChatInput","LineEdit","Root",rect(24,553,560,34)+'visible = false\nmax_length = 160\nplaceholder_text = "전체 메시지 (Tab: 팀/전체)"')
- panel("Pause",510,245,420,340)
+ panel("Pause",510,215,420,400)
  label("Title","Root/Pause","일시 정지",28,23,360,42,28)
  button("Resume","Root/Pause","계속하기",30,93,360,48)
  button("Keys","Root/Pause","단축키 편집",30,153,360,48)
  button("Surrender","Root/Pause","항복",30,213,360,48)
- label("Status","Root/Pause","",30,274,360,48,14)
+ button("Quit","Root/Pause","로비로 나가기",30,273,360,48)
+ label("Status","Root/Pause","",30,334,360,48,14)
  panel("KeyEditor",420,178,600,460)
  label("Title","Root/KeyEditor","단축키 설정 · 칸을 눌러 키 입력",24,20,552,38,22)
  for i in 12:button("Key%d" % i,"Root/KeyEditor","",24+(i%4)*138,82+(i/4)*78,130,62)
  button("Save","Root/KeyEditor","저장하고 닫기",24,355,552,55)
  var output:=FileAccess.open("res://game/scenes/hud.tscn",FileAccess.WRITE)
  output.store_string(content);output.close()
+ build_lobby()
  var wave:=AudioStreamWAV.new();wave.format=AudioStreamWAV.FORMAT_16_BITS;wave.mix_rate=22050
  var bytes:=PackedByteArray();bytes.resize(4410*2)
  for i in 4410:bytes.encode_s16(i*2,int(sin(TAU*740*i/22050.0)*5000*(1.0-i/4410.0)))
@@ -98,3 +100,88 @@ script = ExtResource("7")')
  if error!=OK:push_error(error_string(error));quit(1);return
  print("Generated HUD, licensed font references and alert placeholder.")
  quit()
+
+func build_lobby() -> void:
+ serial=3000
+ content='''[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/scripts/UI/Lobby.cs" id="1"]
+[ext_resource type="Shader" path="res://game/shaders/hologram_ui.gdshader" id="3"]
+[ext_resource type="FontFile" path="res://game/assets/fonts/Pretendard-Regular.otf" id="4"]
+
+[sub_resource type="ShaderMaterial" id="Glass"]
+shader = ExtResource("3")
+[sub_resource type="StyleBoxFlat" id="Button"]
+bg_color = Color(0.045,0.095,0.145,0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15,0.39,0.49,0.75)
+corner_radius_top_left = 5
+corner_radius_bottom_right = 5
+[sub_resource type="StyleBoxFlat" id="Hover"]
+bg_color = Color(0.09,0.25,0.31,1)
+border_width_left = 2
+border_width_bottom = 2
+border_color = Color(0.25,0.85,1,1)
+[sub_resource type="Theme" id="Theme"]
+default_font = ExtResource("4")
+default_font_size = 18
+Button/styles/normal = SubResource("Button")
+Button/styles/hover = SubResource("Hover")
+Button/styles/pressed = SubResource("Hover")
+Button/styles/disabled = SubResource("Button")
+OptionButton/styles/normal = SubResource("Button")
+OptionButton/styles/hover = SubResource("Hover")
+LineEdit/styles/normal = SubResource("Button")
+
+[node name="LobbyUI" type="Control" unique_id=2999]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+'''
+ node("Backdrop","ColorRect",".",'layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.035,0.05,0.085,1)')
+ node("Copy","BackBufferCopy",".",'copy_mode = 2')
+ node("Root","Control",".",'anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = SubResource("Theme")')
+ label("Title","Root","ASTRAGENE",80,54,700,74,58)
+ label("Subtitle","Root","LUMINA 연합 × VERGE 군체  ·  결정론적 락스텝 RTS",84,128,900,32,18)
+ panel("Menu",80,188,560,660)
+ label("SoloTitle","Root/Menu","싱글 플레이",24,16,500,28,15)
+ button("Local","Root/Menu","AI와 대전",24,50,330,50)
+ node("Difficulty","OptionButton","Root/Menu",rect(366,50,170,50)+'focus_mode = 0')
+ label("NetTitle","Root/Menu","멀티플레이 (직접 IP)",24,120,500,28,15)
+ node("Address","LineEdit","Root/Menu",rect(24,154,330,46)+'text = "127.0.0.1"
+placeholder_text = "호스트 IP"')
+ node("Port","LineEdit","Root/Menu",rect(366,154,170,46)+'text = "27415"
+placeholder_text = "포트"')
+ button("Host","Root/Menu","방 만들기 (호스트)",24,212,250,50)
+ button("Join","Root/Menu","접속",286,212,250,50)
+ label("FactionLabel","Root/Menu","진영",24,284,120,30,15)
+ node("Faction","OptionButton","Root/Menu",rect(24,314,250,46)+'focus_mode = 0')
+ label("MapLabel","Root/Menu","맵",286,284,120,30,15)
+ node("Map","OptionButton","Root/Menu",rect(286,314,250,46)+'focus_mode = 0')
+ node("Ready","CheckButton","Root/Menu",rect(24,378,250,46)+'text = "준비 완료"
+focus_mode = 0
+disabled = true')
+ button("Start","Root/Menu","경기 시작",286,378,250,46)
+ button("Leave","Root/Menu","방 나가기",24,436,512,42)
+ button("Replay","Root/Menu","마지막 리플레이 보기",24,506,250,46)
+ button("Settings","Root/Menu","설정",286,506,250,46)
+ button("Quit","Root/Menu","종료",24,574,512,46)
+ panel("Room",668,188,692,660)
+ label("RoomTitle","Root/Room","대기실",24,16,640,34,22)
+ label("Players","Root/Room","방을 만들거나 호스트에 접속하세요.",24,64,640,300,20)
+ label("Seed","Root/Room","",24,380,640,30,15)
+ label("Status","Root/Room","",24,420,640,210,17)
+ var output:=FileAccess.open("res://game/scenes/lobby_ui.tscn",FileAccess.WRITE)
+ output.store_string(content);output.close()
