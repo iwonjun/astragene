@@ -8,6 +8,8 @@
 [ext_resource type="Environment" path="res://game/assets/generated/world_environment.tres" id="5"]
 [ext_resource type="Script" path="res://game/scripts/View/RenderBenchmark.cs" id="6"]
 
+[ext_resource type="PackedScene" path="res://game/scenes/hud.tscn" id="7"]
+
 [node name="Match" type="Node" unique_id=67472705]
 
 [node name="Bridge" type="Node" parent="." unique_id=1001]
@@ -32,3 +34,5 @@ light_energy = 1.0
 
 [node name="Benchmark" type="Node" parent="." unique_id=1007]
 script = ExtResource("6")
+
+[node name="HUD" parent="." unique_id=1008 instance=ExtResource("7")]

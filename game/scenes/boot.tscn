@@ -1,3 +1,6 @@
 [gd_scene format=3 uid="uid://my1w8epbmgu0"]
 
+[ext_resource type="Script" path="res://game/scripts/UI/BootMenu.cs" id="1"]
+
 [node name="Boot" type="Node" unique_id=208018081]
+script = ExtResource("1")

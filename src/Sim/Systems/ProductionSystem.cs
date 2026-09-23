@@ -12,6 +12,11 @@ internal sealed class ProductionSystem
     private readonly Job[,] _jobs;
     private readonly int[] _count;
     internal ProductionSystem(int capacity){_jobs=new Job[capacity,5];_count=new int[capacity];}
+    internal ProductionOrder Order(int index,int queue)
+    {
+        if(queue<0 || queue>=_count[index])return new ProductionOrder(-1,0,false);
+        var job=_jobs[index,queue];return new ProductionOrder(job.Definition,job.Left,job.Research);
+    }
     internal int QueueCount(int index)=>_count[index];
     internal PlayerResources Resources(EntityStore s,EconomySystem economy,int player)
     {

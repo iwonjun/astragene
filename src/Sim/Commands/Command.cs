@@ -6,7 +6,7 @@ using RtsGame.Sim.Entities;
 
 namespace RtsGame.Sim.Commands;
 
-public enum CommandType { Move, AttackMove, Attack, Stop, Hold, Patrol, Follow, Build, Train, Cancel, Rally, Gather, Repair, Research }
+public enum CommandType { Move, AttackMove, Attack, Stop, Hold, Patrol, Follow, Build, Train, Cancel, Rally, Gather, Repair, Research, Surrender }
 public readonly record struct Command(CommandType Type, int Player, EntityId Entity, EntityId Target, Fix2 Position, int Definition = -1, bool Queued = false)
 {
     public const int ByteSize = 48;
@@ -25,7 +25,7 @@ public readonly record struct Command(CommandType Type, int Player, EntityId Ent
     }
     public static Command Read(ReadOnlySpan<byte> bytes)
     {
-        if(bytes.Length!=ByteSize || bytes[0]>(byte)CommandType.Research || bytes[1]>1 || bytes[2]!=0 || bytes[3]!=0 || BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(44))!=0)
+        if(bytes.Length!=ByteSize || bytes[0]>(byte)CommandType.Surrender || bytes[1]>1 || bytes[2]!=0 || bytes[3]!=0 || BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(44))!=0)
             throw new InvalidDataException("Invalid command encoding.");
         return new Command((CommandType)bytes[0],BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(4)),
             new EntityId(BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(8)),BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(12))),

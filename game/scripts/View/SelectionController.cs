@@ -19,6 +19,8 @@ public partial class SelectionController : Node2D
     private ulong _lastGroupTime;
     public int SelectedCount=>_selected.Count;
     public IReadOnlyList<EntityId> Selected=>_selected;
+    public void Prune()=>_selected.RemoveAll(id=>!IsFriendly(id));
+    public void SelectOnly(EntityId id){_selected.Clear();if(IsFriendly(id))_selected.Add(id);}
     public override void _Process(double delta) { if(_dragging)QueueRedraw(); }
     public override void _Draw()
     {
@@ -49,7 +51,7 @@ public partial class SelectionController : Node2D
         if(input is InputEventMouseButton right && right.ButtonIndex==MouseButton.Right && right.Pressed && camera!=null)
         {
             var hit=_bridge.PickGround(camera,right.Position);
-            if(hit is Vector3 point)IssueSelected(CommandType.Move,point,EntityId.None,Input.IsKeyPressed(Key.Shift));
+            if(hit is Vector3 point)foreach(var id in _selected)if(IsFriendly(id))_bridge.IssueContext(id,point,Input.IsKeyPressed(Key.Shift));
         }
         if(input is InputEventKey key && key.Pressed && !key.Echo && key.PhysicalKeycode>=Key.Key0 && key.PhysicalKeycode<=Key.Key9)
         {
@@ -73,7 +75,7 @@ public partial class SelectionController : Node2D
         var candidates=new List<EntityId>();
         foreach(int i in _bridge.FriendlyIds())
         {
-            var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var position=_bridge.SurfacePosition(e.Transform.Position);
+            var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var position=_bridge.EntityPosition(e);
             if(camera.IsPositionBehind(position))continue;
             Vector2 point=camera.UnprojectPosition(position);
             if(click?point.DistanceTo(rectangle.Position)<14:rectangle.HasPoint(point))
@@ -84,7 +86,7 @@ public partial class SelectionController : Node2D
             candidates.Clear();
             foreach(int i in _bridge.FriendlyIds())
             {
-                var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var p=_bridge.SurfacePosition(e.Transform.Position);
+                var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var p=_bridge.EntityPosition(e);
                 if(e.Type.Definition==type && e.Type.IsBuilding==building && !camera.IsPositionBehind(p) && GetViewport().GetVisibleRect().HasPoint(camera.UnprojectPosition(p)))candidates.Add(id);
             }
         }

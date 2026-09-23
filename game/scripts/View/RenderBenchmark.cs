@@ -9,7 +9,7 @@ namespace RtsGame.View;
 // Opt-in real-renderer fixture. Simulation and combat run normally; no hidden state is read.
 public partial class RenderBenchmark : Node
 {
-    private bool _enabled,_saving,_artCapture;
+    private bool _enabled,_saving,_artCapture,_hudCapture;
     private int _warmFrames,_fullFrames;
     private double _fullMs;
     private int _frames,_drawMax,_visibleMax,_shot;
@@ -20,11 +20,13 @@ public partial class RenderBenchmark : Node
     public override void _Ready()
     {
         _artCapture=Array.IndexOf(OS.GetCmdlineUserArgs(),"--art-capture")>=0;
-        _enabled=_artCapture || Array.IndexOf(OS.GetCmdlineUserArgs(),"--render-benchmark")>=0;
+        _hudCapture=Array.IndexOf(OS.GetCmdlineUserArgs(),"--hud-capture")>=0;
+        _enabled=_hudCapture || _artCapture || Array.IndexOf(OS.GetCmdlineUserArgs(),"--render-benchmark")>=0;
         if(!_enabled){SetProcess(false);return;}
         System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://docs"));
         DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);Engine.MaxFps=0;
         _bridge=GetNode<MatchBridge>("../Bridge");_camera=GetNode<RtsCamera>("../Camera");_camera.ControlsEnabled=false;
+        if(_hudCapture){GetWindow().Size=new Vector2I(1600,900);GetNode<SelectionController>("../Selection").SelectOnly(_bridge.View.IdAt(0));return;}
         if(_artCapture)
         {
             var gallery=new List<SpawnSpec>();
@@ -47,6 +49,7 @@ public partial class RenderBenchmark : Node
     {
         if(!_enabled || _saving)return;
         _warmFrames++;_warmSeconds+=delta;if(_warmFrames<120 || _warmSeconds<1)return;
+        if(_hudCapture){if(_shot==0){_shot=10;SaveShot();return;}GetTree().Quit();return;}
         if(_artCapture)
         {
             if(_shot==0){_shot=2;SaveShot();_warmFrames=0;_warmSeconds=0;return;}
@@ -70,6 +73,6 @@ public partial class RenderBenchmark : Node
     private async void SaveShot()
     {
         _saving=true;await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
-        GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath($"res://docs/phase9-{(_shot==4?3:_shot)}.png"));_saving=false;
+        GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(_hudCapture?"res://docs/phase10-hud.png":$"res://docs/phase9-{(_shot==4?3:_shot)}.png"));_saving=false;
     }
 }

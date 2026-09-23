@@ -102,7 +102,7 @@ public partial class WorldRenderer : Node3D
         {
             var id=_bridge.View.IdAt(i);bool ghost=false;EntitySnapshot e;
             if(id==EntityId.None){if(!_bridge.View.TryGhost(i,out e)){_visible[i]=false;_ids[i]=EntityId.None;continue;}ghost=true;id=e.Id;}else e=_bridge.View.Get(id);
-            Vector3 p=_bridge.SurfacePosition(e.Transform.Position);
+            Vector3 p=_bridge.EntityPosition(e);
             bool fresh=_ids[i]!=id;
             _previous[i]=fresh?p:_current[i];_current[i]=p;
             float hp=(float)((double)e.Health.Current.Raw/e.Health.Maximum.Raw);

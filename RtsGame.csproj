@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="game/scripts/**/*.cs" />
-    <Compile Include="tools/SelectionChecks.cs" Condition="'$(Configuration)' == 'Debug'" />
+    <Compile Include="tools/*Checks.cs" Condition="'$(Configuration)' == 'Debug'" />
     <ProjectReference Include="src/Sim/Sim.csproj" />
   </ItemGroup>
 </Project>

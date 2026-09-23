@@ -15,6 +15,7 @@ public partial class MatchBridge : Node
     public VisibilityFilter View=>_view!=null&&_view.Player==LocalPlayer?_view:(_view=World.ViewFor(LocalPlayer));
     private readonly List<Command> _pending=new();
     public int LocalPlayer {get;set;}
+    public bool IsPaused {get;set;}
     public override void _Ready()=>ResetMatch();
     public void ResetMatch()
     {
@@ -30,11 +31,46 @@ public partial class MatchBridge : Node
     }
     public override void _PhysicsProcess(double delta)
     {
-        if(World==null)return;
+        if(World==null || IsPaused)return;
         World.Tick(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_pending));_pending.Clear();
     }
     internal void Initialize(SimWorld world) { World=world; _view=null; _pending.Clear(); }
     public void Issue(Command command)=>_pending.Add(command);
+    public EntityId PickEntity(Vector3 point)
+    {
+        EntityId result=EntityId.None;float best=1.8f;
+        for(int i=0;i<View.Capacity;i++){var id=View.IdAt(i);if(id==EntityId.None)continue;var e=View.Get(id);var p=EntityPosition(e);float distance=new Vector2(p.X-point.X,p.Z-point.Z).Length();float radius=e.Type.IsBuilding?RtsGame.Sim.Data.DefDatabase.Buildings[e.Type.Definition].Width*0.7f:0.7f;if(distance<radius && distance<best){best=distance;result=id;}}
+        return result;
+    }
+    public void IssueContext(EntityId id,Vector3 point,bool queued)
+    {
+        if(!View.TryGet(id,out var source))return;
+        int definition=-1;var target=PickEntity(point);CommandType type=source.Type.IsBuilding?CommandType.Rally:CommandType.Move;
+        bool worker=!source.Type.IsBuilding && RtsGame.Sim.Data.DefDatabase.Units[source.Type.Definition].Worker;
+        if(target!=EntityId.None && !source.Type.IsBuilding)
+        {
+            var e=View.Get(target);type=e.Owner.Player!=LocalPlayer?CommandType.Attack:worker&&e.Type.IsBuilding&&e.Type.Definition<6?CommandType.Repair:CommandType.Follow;
+        }
+        else if(worker)
+        {
+            int x=(int)point.X,z=(int)point.Z;
+            if((uint)x<128&&(uint)z<128&&World.Map.Grid[x,z].ResourceNodeId>=0)type=CommandType.Gather;
+        }
+                if(worker && target!=EntityId.None && View.Get(target).Type.IsBuilding && View.Get(target).Type.Definition is 5 or 11){type=CommandType.Gather;point=SurfacePosition(View.Get(target).Transform.Position);}
+        if(type==CommandType.Gather)definition=ResourceNodeAt(point);
+        if(type is CommandType.Move or CommandType.Rally or CommandType.Gather)target=EntityId.None;
+        Issue(new Command(type,LocalPlayer,id,target,ToSim(point),definition,queued));
+    }
+    public int ResourceNodeAt(Vector3 point)
+    {
+        int x=(int)point.X,z=(int)point.Z;return (uint)x<128&&(uint)z<128?World.Map.Grid[x,z].ResourceNodeId:-1;
+    }
+    public Vector3 EntityPosition(EntitySnapshot e)
+    {
+        var p=SurfacePosition(e.Transform.Position);
+        if(e.Type.IsBuilding){float half=RtsGame.Sim.Data.DefDatabase.Buildings[e.Type.Definition].Width*0.5f;p+=new Vector3(half,0,half);}
+        return p;
+    }
     public Vector3 SurfacePosition(Fix2 position)
     {
         var p=ToView(position);int x=Math.Clamp((int)p.X,0,127),z=Math.Clamp((int)p.Z,0,127);

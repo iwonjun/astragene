@@ -28,6 +28,7 @@ public sealed class SimWorld
     private readonly Fix2[] _patrolOrigin;
     private readonly Queue<SimEvent> _events=new();
     private DetRandom _random;
+    private readonly bool[] _surrendered=new bool[4];
     public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024,int? initialOre=null,int? initialPlasma=null)
     {
         Map=map; Entities=new EntityStore(capacity); _random=new DetRandom(seed);
@@ -51,6 +52,10 @@ public sealed class SimWorld
         _queues[i].Clear();_states[i]=UnitState.Idle;_active[i]=default;_patrolOrigin[i]=Fix2.Zero;
         return id;
     }
+    internal bool Surrendered(int player)=>_surrendered[player];
+    internal int UpgradeLevel(int player,int kind)=>(uint)kind<3?_economy.Upgrades[player,kind]:throw new ArgumentOutOfRangeException(nameof(kind));
+    internal ProductionOrder ProductionAt(EntityId id,int index)=>_production.Order(id.Index,index);
+    internal int ConstructionTicks(EntityId id)=>_economy.ConstructionLeft(id.Index);
     public VisibilityFilter ViewFor(int player)=>new(this,Entities,_vision,player);
     internal bool VisibleTo(int player,int x,int y)=>_vision.At(player,x,y)==Visibility.Visible;
     internal PlayerResources Resources(int player)=>_production.Resources(Entities,_economy,player);
@@ -60,7 +65,7 @@ public sealed class SimWorld
     internal bool TryDequeueEvent(out SimEvent value)=>_events.TryDequeue(out value);
     public void Tick(ReadOnlySpan<Command> commands)
     {
-        foreach(Command command in commands) Accept(command);
+        foreach(Command command in commands)if(!Accept(command))Emit(command.Player,"Rejected",command.Entity);
         for(int i=0;i<Entities.Capacity;i++)
         {
             var id=Entities.IdAt(i);if(id==EntityId.None)continue;
@@ -82,7 +87,9 @@ public sealed class SimWorld
     }
     private bool Accept(Command c)
     {
-        if((uint)c.Type>(uint)CommandType.Research || !Entities.IsAlive(c.Entity) || Entities.Owner[c.Entity.Index].Player!=c.Player){_events.Enqueue(new(_clock.Tick,c.Player,"Rejected",c.Entity));return false;}
+        if((uint)c.Player>=4 || _surrendered[c.Player])return false;
+        if(c.Type==CommandType.Surrender){_surrendered[c.Player]=true;Emit(c.Player,"Surrendered",EntityId.None);return true;}
+        if((uint)c.Type>(uint)CommandType.Research || !Entities.IsAlive(c.Entity) || Entities.Owner[c.Entity.Index].Player!=c.Player)return false;
         if(c.Target!=EntityId.None && !_vision.CanSee(Entities,c.Player,c.Target))return false;
         if(_economy.WorkerLocked(c.Entity) && c.Type!=CommandType.Cancel)return false;
         if(c.Queued && c.Type!=CommandType.Stop && c.Type!=CommandType.Cancel)return _queues[c.Entity.Index].Enqueue(c);
@@ -121,6 +128,7 @@ public sealed class SimWorld
     {
         var h=new WorldHasher();h.AddUInt64(Map.Hash());h.AddUInt64(Entities.Hash());h.AddInt64(_clock.Tick);
         h.AddUInt64(_random.State0);h.AddUInt64(_random.State1);
+        for(int player=0;player<4;player++)h.AddByte(_surrendered[player]?(byte)1:(byte)0);
         Span<byte> bytes=stackalloc byte[Command.ByteSize];
         for(int i=0;i<Entities.Capacity;i++)
         {

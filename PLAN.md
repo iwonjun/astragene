@@ -257,3 +257,20 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Sim 42/42, GdUnit 3/3 통과, C# 빌드 경고/오류 0.
 - [x] 400유닛 교전 60fps, 드로우콜 50 이하 실측.
 - [x] 스크린샷 3장과 씬/셰이더 검증.
+
+## Phase 10 — 진행 중
+### 변경 파일과 이유
+- tools/build_ui.gd, build_scenes.gd: HUD/부팅 메뉴와 글래스 패널/3×4 카드/미니맵/선택 패널을 코드로 생성.
+- game/scripts/UI/{MatchHud,Minimap,Hotkeys}.cs: 필터 기반 표시, 컨텍스트 명령, 건설 메뉴, 생산큐, 알림, 로컬 채팅/일시정지/항복 입력.
+- game/scripts/View/SelectionController.cs 및 Bridge/MatchBridge.cs: 지면 대상 명령과 우클릭 문맥, UI에 명령 전달. UI는 상태를 변경하지 않는다.
+- game/shaders/hologram_ui.gdshader: 화면 블러, 잘린 모서리, 얇은 네온 테두리와 스캔라인.
+- game/assets/fonts/: 라이선스 확인된 한글 산세리프/숫자 모노 폰트.
+- game/hotkeys.json, test/hud_test.gd, tools/HudChecks.cs: 키 매핑 저장/로드와 HUD 선택·생산·채집 통합 테스트.
+- 채팅의 실제 상대 전송은 Phase 11 CommandPacket 전송과 결합, 승패 결과 처리는 Phase 13에서 완성한다.
+
+### Phase 10 완료
+- 상단 자원 카운트업/증감, 직접 그리는 시야 기반 미니맵과 카메라 영역, 단일 초상화/스탯/취소 가능한 생산큐, 200명 스크롤 아이콘, 3×4 문맥 명령/건설 하위 메뉴 및 배치 윤곽 구현.
+- 자원/보급 경고, 기지 피격 알림과 미니맵 점멸/Space 이동/음향, 전체·팀 채팅 입력 및 로컬 기록, 일시정지/항복 명령, hotkeys.json 리매핑 연결. 상대 채팅 전송은 Phase 11에서 결합.
+- Pretendard / Roboto Mono는 각 공식 저장소 고정 커밋에서 내려받아 SIL OFL 1.1과 출처를 동봉. HUD 코드 생성 및 CI 재생성 검사에 포함.
+- 생산 상세 조회는 소유자 필터를 통과해야 하며 복사 값만 반환. 항복은 직렬화되는 명령과 해시 상태로 추가; 승패/결과 화면은 Phase 13.
+- Sim 44/44, GdUnit 4/4, 부팅/셰이더 검사 통과. 실제 화면 docs/phase10-hud.png 확인. 기본 실행은 이제 로컬 경기를 연다.

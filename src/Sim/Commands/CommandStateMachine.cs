@@ -7,7 +7,7 @@ internal static class CommandStateMachine
     {
         UnitState.Moving, UnitState.Moving, UnitState.Attacking, UnitState.Idle, UnitState.Holding,
         UnitState.Patrolling, UnitState.Following, UnitState.Building, UnitState.Training, UnitState.Idle,
-        UnitState.Idle, UnitState.Gathering, UnitState.Repairing, UnitState.Training
+        UnitState.Idle, UnitState.Gathering, UnitState.Repairing, UnitState.Training, UnitState.Idle
     };
     internal static UnitState Next(CommandType command) => Transitions[(int)command];
 }
