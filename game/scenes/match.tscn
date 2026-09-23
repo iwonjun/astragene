@@ -3,6 +3,11 @@
 [ext_resource type="Script" path="res://game/scripts/Bridge/MatchBridge.cs" id="1"]
 [ext_resource type="Script" path="res://game/scripts/View/SelectionController.cs" id="2"]
 
+[ext_resource type="Script" path="res://game/scripts/View/WorldRenderer.cs" id="3"]
+[ext_resource type="Script" path="res://game/scripts/View/RtsCamera.cs" id="4"]
+[ext_resource type="Environment" path="res://game/assets/generated/world_environment.tres" id="5"]
+[ext_resource type="Script" path="res://game/scripts/View/RenderBenchmark.cs" id="6"]
+
 [node name="Match" type="Node" unique_id=67472705]
 
 [node name="Bridge" type="Node" parent="." unique_id=1001]
@@ -10,3 +15,20 @@ script = ExtResource("1")
 
 [node name="Selection" type="Node2D" parent="." unique_id=1002]
 script = ExtResource("2")
+
+[node name="Renderer" type="Node3D" parent="." unique_id=1003]
+script = ExtResource("3")
+
+[node name="Camera" type="Camera3D" parent="." unique_id=1004]
+script = ExtResource("4")
+
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=1005]
+environment = ExtResource("5")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1006]
+rotation_degrees = Vector3(-55,-30,0)
+light_color = Color(0.9,0.93,1,1)
+light_energy = 1.0
+
+[node name="Benchmark" type="Node" parent="." unique_id=1007]
+script = ExtResource("6")

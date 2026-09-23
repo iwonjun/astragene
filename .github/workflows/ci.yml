@@ -48,6 +48,7 @@ jobs:
               throw 'Godot validation failed.'
             }
           }
+          Invoke-GodotChecked @('--headless', '--script', 'res://tools/gen_meshes.gd')
           Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_scenes.gd')
           git diff --exit-code -- game/scenes
           if ($LASTEXITCODE -ne 0) { throw 'Generated scenes differ from committed files.' }

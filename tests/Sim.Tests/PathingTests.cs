@@ -100,4 +100,15 @@ public sealed class PathingTests
         movement.Tick(s);
         Assert.True((s.Transform[a.Index].Position-s.Transform[b.Index].Position).Length>=Fix64.FromRatio(1,2));
     }
-}
+    [Fact]
+    public void NearbyIndependentGoalsAvoidFieldsButObstaclesStillUseFields()
+    {
+        var s=new EntityStore(40);var movement=new MovementSystem(Map(),40);
+        for(int i=0;i<40;i++){var id=Unit(s,10+i,10);movement.Move(s,id,Pos(10+i,16));}
+        movement.Tick(s);Assert.Equal(0,movement.PathBuildCount);
+        var tiles=new Tile[128*128];Array.Fill(tiles,new Tile(true,true,0));tiles[11*128+11]=new Tile(false,false,0);
+        var blocked=new MovementSystem(new Grid(tiles),1);var single=new EntityStore(1);var a=Unit(single,10,10);
+        blocked.Move(single,a,Pos(12,12));blocked.Tick(single);Assert.Equal(1,blocked.PathBuildCount);
+        for(int i=0;i<100;i++){blocked.Tick(single);var p=single.Transform[a.Index].Position;Assert.False(p.X.FloorToInt()==11 && p.Y.FloorToInt()==11);}
+        Assert.False(single.Movement[a.Index].Active);
+    }}

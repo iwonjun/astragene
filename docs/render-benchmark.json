@@ -1,0 +1,13 @@
+{
+  "renderer": "forward_plus",
+  "adapter": "NVIDIA GeForce RTX 4060 Ti",
+  "resolution": "1600x900",
+  "frames": 8913,
+  "averageMs": 0.6731038931897267,
+  "p95Ms": 0.838,
+  "maximumDrawCalls": 31,
+  "maximumVisibleEntities": 400,
+  "full400Frames": 421,
+  "full400AverageMs": 0.9503230403800466,
+  "remainingTick": 119
+}

@@ -23,6 +23,10 @@ func _initialize() -> void:
         var content: String = '[gd_scene format=3 uid="%s"]\n\n[node name="%s" type="Node" unique_id=%d]\n' % [uid, scene_name.capitalize(), node_id]
         if scene_name == "match":
             content = '[gd_scene format=3 uid="%s"]\n\n[ext_resource type="Script" path="res://game/scripts/Bridge/MatchBridge.cs" id="1"]\n[ext_resource type="Script" path="res://game/scripts/View/SelectionController.cs" id="2"]\n\n[node name="Match" type="Node" unique_id=%d]\n\n[node name="Bridge" type="Node" parent="." unique_id=1001]\nscript = ExtResource("1")\n\n[node name="Selection" type="Node2D" parent="." unique_id=1002]\nscript = ExtResource("2")\n' % [uid,node_id]
+        if scene_name == "match":
+            var resources := '[ext_resource type="Script" path="res://game/scripts/View/WorldRenderer.cs" id="3"]\n[ext_resource type="Script" path="res://game/scripts/View/RtsCamera.cs" id="4"]\n[ext_resource type="Environment" path="res://game/assets/generated/world_environment.tres" id="5"]\n[ext_resource type="Script" path="res://game/scripts/View/RenderBenchmark.cs" id="6"]\n\n'
+            content=content.replace('[node name="Match"',resources+'[node name="Match"')
+            content+='\n[node name="Renderer" type="Node3D" parent="." unique_id=1003]\nscript = ExtResource("3")\n\n[node name="Camera" type="Camera3D" parent="." unique_id=1004]\nscript = ExtResource("4")\n\n[node name="Environment" type="WorldEnvironment" parent="." unique_id=1005]\nenvironment = ExtResource("5")\n\n[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1006]\nrotation_degrees = Vector3(-55,-30,0)\nlight_color = Color(0.9,0.93,1,1)\nlight_energy = 1.0\n\n[node name="Benchmark" type="Node" parent="." unique_id=1007]\nscript = ExtResource("6")\n'
         output.store_string(content)
         output.flush()
         error = output.get_error()

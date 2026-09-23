@@ -22,7 +22,7 @@ internal sealed class MovementSystem
             Fix2 target=m.Destination;
             int gx=target.X.FloorToInt(), gy=target.Y.FloorToInt();
             if (!LocalAvoidance.CanOccupy(_grid,target,m.Airborne)) { m.Active=false; continue; }
-            if (!m.Airborne)
+            if (!m.Airborne && !OpenLocalRectangle(position,target))
             {
                 if (m.StalledTicks>=60) { _cache.Invalidate(gx,gy); m.StalledTicks=0; }
                 int next=_cache.Get(gx,gy).NextCell(position.X.FloorToInt(),position.Y.FloorToInt());
@@ -40,6 +40,15 @@ internal sealed class MovementSystem
             if (remaining<=m.Radius*m.Radius || remaining==Fix64.Zero) m.Active=false;
         }
         _avoidance.Resolve(store,_grid);
+    }
+    private bool OpenLocalRectangle(Fix2 start,Fix2 target)
+    {
+        int ax=start.X.FloorToInt(),ay=start.Y.FloorToInt(),bx=target.X.FloorToInt(),by=target.Y.FloorToInt();
+        if(System.Math.Abs(ax-bx)>8 || System.Math.Abs(ay-by)>8)return false;
+        for(int y=System.Math.Min(ay,by);y<=System.Math.Max(ay,by);y++)
+        for(int x=System.Math.Min(ax,bx);x<=System.Math.Max(ax,bx);x++)
+            if(!Grid.Contains(x,y) || !_grid[x,y].Walkable)return false;
+        return true;
     }
     internal bool Move(EntityStore store, EntityId id, Fix2 target)
     {

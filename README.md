@@ -109,3 +109,6 @@ SimWorld는 명령 배열을 틱에 입력받고 읽기 스냅샷과 이벤트 �
 GdUnit4 6.2.1은 기본적으로 headless를 거부하므로 플래그가 필요합니다.
 테스트는 선택 함수를 직접 호출해 검증하며 OS 마우스 입력 전달은 headless 검증 대상이 아닙니다.
 프레임워크: https://github.com/godot-gdunit-labs/gdUnit4/tree/v6.2.1 (설치본에 MIT LICENSE 포함).
+
+## 현재 구현 (Phase 9)
+Sim/전투/경제/시야와 절차 생성 3D 화면이 연결되었습니다. 실행은 `godot res://game/scenes/match.tscn` 입니다. 기본 boot/로비 화면은 다음 HUD 단계에서 연결합니다. WASD/화면 가장자리 이동, 휠 줌, 드래그/더블클릭/Ctrl 선택, 숫자 그룹, 우클릭 이동을 지원합니다. 실제 렌더 결과와 측정 조건은 docs/phase9-validation.md를 참고하세요.

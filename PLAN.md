@@ -234,3 +234,26 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 시야 변화가 없으면 스탬프 갱신 없음, 중첩 카운트 제거/탐색 유지, 고지대 차폐, 은폐/탐지 및 건물 마지막 스냅샷 검증.
 - SimWorld의 EntityStore/상태/자원/이벤트 직접 조회를 internal로 제한하고 외부는 플레이어 결합 VisibilityFilter 사용.
 - 보이지 않는 적 대상 명령 거부 및 Follow의 숨은 적 추적 차단.
+
+## Phase 9 — 진행 중
+### 변경 파일과 이유
+- tools/gen_meshes.gd: 역할별 10개 유닛, 진영별 건물, 선택 링/체력바/VFX 메시와 재질 코드 생성.
+- game/shaders/{toon,outline,dissolve,slash,terrain,fog,healthbar}.gdshader: 툰/림/아웃라인/홀로그램/전장의 안개 표현.
+- game/scripts/View/{WorldRenderer,RtsCamera,VfxPool}.cs: MultiMesh, 위치/회전 보간, 풀링, 카메라 제어.
+- game/scripts/Bridge/MatchBridge.cs: 실제 초기 경기/400유닛 부하 장면 설정, 표시 스냅샷과 성능 측정.
+- tools/build_scenes.gd: 생성 지형, 조명/WorldEnvironment, 카메라/렌더러 씬 연결.
+- docs/: 실 GPU 400유닛 렌더 성능 및 스크린샷 3장.
+### 완료 조건
+- [ ] 400유닛 교전 60fps, 드로우콜 50 이하 실측.
+- [ ] 스크린샷 3장 저장, 씬/셰이더 검증 성공.
+
+### Phase 9 성능 점검에 따른 추가 변경
+- 근접한 개별 목표마다 대형 FlowField를 만드는 것이 교전 시작 지연의 원인. MovementSystem에 8타일 이내의 완전히 열린 사각 영역만 직선 이동하는 결정론적 단축 경로를 추가. 장애물/모서리 안전성과 다수 독립 목표 회귀 테스트를 동반한다.
+
+### Phase 9 완료
+- 10종 유닛/2진영 건물/자원 결정/3단 지형 생성, 툰·림·확대 헐, 디졸브, 시야 마스크, 풀링 VFX, 인스턴싱 체력바/선택 링, 카메라 연결.
+- 400기 전체 표시 교전 421프레임 평균 0.9503ms, 최대 드로우콜 31. RTX4060Ti / Forward+ D3D12 / 1600×900, 짧은 구간의 로컬 측정. 전체 6초 측정과 구별해 docs/phase9-validation.md에 기록.
+- docs/phase9-1.png(교전), phase9-2.png(역할별 갤러리), phase9-3.png(본진) 실제 GPU 캡처 육안 확인.
+- Sim 42/42, GdUnit 3/3 통과, C# 빌드 경고/오류 0.
+- [x] 400유닛 교전 60fps, 드로우콜 50 이하 실측.
+- [x] 스크린샷 3장과 씬/셰이더 검증.
