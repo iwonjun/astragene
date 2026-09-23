@@ -14,11 +14,12 @@ public readonly record struct SimEvent(long Tick,int Player,string Kind,EntityId
 public sealed class SimWorld
 {
     public MapData Map {get;}
-    public EntityStore Entities {get;}
+    internal EntityStore Entities {get;}
     private readonly SimClock _clock=new();
     public long TickNumber=>_clock.Tick;
     private readonly MovementSystem _movement;
     private readonly CombatSystem _combat;
+    private readonly VisionSystem _vision;
     private readonly EconomySystem _economy;
     private readonly ProductionSystem _production;
     private readonly CommandQueue[] _queues;
@@ -30,11 +31,12 @@ public sealed class SimWorld
     public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024,int? initialOre=null,int? initialPlasma=null)
     {
         Map=map; Entities=new EntityStore(capacity); _random=new DetRandom(seed);
-        _movement=new MovementSystem(map.Grid,capacity); _combat=new CombatSystem(capacity); _economy=new EconomySystem(map,capacity); _production=new ProductionSystem(capacity);
+        _movement=new MovementSystem(map.Grid,capacity); _combat=new CombatSystem(capacity); _vision=new VisionSystem(capacity); _economy=new EconomySystem(map,capacity); _production=new ProductionSystem(capacity);
         _queues=new CommandQueue[capacity]; _states=new UnitState[capacity]; _active=new Command[capacity]; _patrolOrigin=new Fix2[capacity];
         for(int i=0;i<capacity;i++)_queues[i]=new CommandQueue();
         for(int p=0;p<4;p++){if(initialOre.HasValue)_economy.Ore[p]=initialOre.Value;if(initialPlasma.HasValue)_economy.Plasma[p]=initialPlasma.Value;}
         foreach(var spawn in spawns) Spawn(spawn);
+        _vision.Update(Entities,Map);
     }
     internal EntityId Spawn(SpawnSpec spawn)
     {
@@ -49,11 +51,13 @@ public sealed class SimWorld
         _queues[i].Clear();_states[i]=UnitState.Idle;_active[i]=default;_patrolOrigin[i]=Fix2.Zero;
         return id;
     }
-    public PlayerResources Resources(int player)=>_production.Resources(Entities,_economy,player);
+    public VisibilityFilter ViewFor(int player)=>new(this,Entities,_vision,player);
+    internal bool VisibleTo(int player,int x,int y)=>_vision.At(player,x,y)==Visibility.Visible;
+    internal PlayerResources Resources(int player)=>_production.Resources(Entities,_economy,player);
     internal void RallyProduced(EntityId parent,EntityId child){var target=Entities.Movement[parent.Index].Destination;if(target!=Fix2.Zero)Accept(new Command(CommandType.Move,Entities.Owner[parent.Index].Player,child,EntityId.None,target));}
     internal void Emit(int player,string kind,EntityId id)=>_events.Enqueue(new(_clock.Tick,player,kind,id));
-    public UnitState State(EntityId id)=>Entities.IsAlive(id)?_states[id.Index]:UnitState.Idle;
-    public bool TryDequeueEvent(out SimEvent value)=>_events.TryDequeue(out value);
+    internal UnitState State(EntityId id)=>Entities.IsAlive(id)?_states[id.Index]:UnitState.Idle;
+    internal bool TryDequeueEvent(out SimEvent value)=>_events.TryDequeue(out value);
     public void Tick(ReadOnlySpan<Command> commands)
     {
         foreach(Command command in commands) Accept(command);
@@ -61,6 +65,7 @@ public sealed class SimWorld
         {
             var id=Entities.IdAt(i);if(id==EntityId.None)continue;
             if(_states[i]==UnitState.Attacking && !Entities.IsAlive(_active[i].Target))_states[i]=UnitState.Idle;
+            if(_states[i]==UnitState.Following && !_vision.CanSee(Entities,Entities.Owner[i].Player,_active[i].Target)){_states[i]=UnitState.Idle;Entities.Movement[i].Active=false;}
             if(_states[i]==UnitState.Following && Entities.IsAlive(_active[i].Target))
                 _movement.Move(Entities,id,Entities.Get(_active[i].Target).Transform.Position);
             if(_states[i]==UnitState.Patrolling && !Entities.Movement[i].Active)
@@ -71,12 +76,14 @@ public sealed class SimWorld
             if((_states[i]==UnitState.Moving && !Entities.Movement[i].Active) || (_states[i]==UnitState.Following && !Entities.IsAlive(_active[i].Target)))_states[i]=UnitState.Idle;
             if(_states[i]==UnitState.Idle && _queues[i].TryDequeue(out var queued))Execute(queued);
         }
+        _vision.Update(Entities,Map);
         _economy.Tick(this,_states,_active,_movement); _production.Tick(this,_economy);
-        _movement.Tick(Entities); _combat.Tick(Entities,Map,_clock.Tick,_states,_active,_movement,_economy,Kill); _clock.Advance();
+        _movement.Tick(Entities); _vision.Update(Entities,Map); _combat.Tick(Entities,Map,_clock.Tick,_states,_active,_movement,_economy,_vision,Kill); _vision.Update(Entities,Map); _clock.Advance();
     }
     private bool Accept(Command c)
     {
         if((uint)c.Type>(uint)CommandType.Research || !Entities.IsAlive(c.Entity) || Entities.Owner[c.Entity.Index].Player!=c.Player){_events.Enqueue(new(_clock.Tick,c.Player,"Rejected",c.Entity));return false;}
+        if(c.Target!=EntityId.None && !_vision.CanSee(Entities,c.Player,c.Target))return false;
         if(_economy.WorkerLocked(c.Entity) && c.Type!=CommandType.Cancel)return false;
         if(c.Queued && c.Type!=CommandType.Stop && c.Type!=CommandType.Cancel)return _queues[c.Entity.Index].Enqueue(c);
         _queues[c.Entity.Index].Clear();return Execute(c);
@@ -120,7 +127,7 @@ public sealed class SimWorld
             if(Entities.IdAt(i)==EntityId.None)continue;
             h.AddInt32((int)_states[i]);_queues[i].Hash(ref h);_active[i].Write(bytes);h.Add(bytes);h.AddFix2(_patrolOrigin[i]);
         }
-        _combat.Hash(ref h); _economy.Hash(ref h); _production.Hash(ref h);
+        _vision.Hash(ref h); _combat.Hash(ref h); _economy.Hash(ref h); _production.Hash(ref h);
         return h.Value;
     }
 }

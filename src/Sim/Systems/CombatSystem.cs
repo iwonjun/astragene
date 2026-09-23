@@ -27,7 +27,7 @@ internal sealed class CombatSystem
         if(uphill)damage*=Fix64.FromRatio(3,4);
         return FixMath.Max(Fix64.One,damage-Fix64.FromInt(armor));
     }
-    internal void Tick(EntityStore s,MapData map,long tick,UnitState[] states,Command[] commands,MovementSystem movement,EconomySystem economy,Action<EntityId,EntityId> kill)
+    internal void Tick(EntityStore s,MapData map,long tick,UnitState[] states,Command[] commands,MovementSystem movement,EconomySystem economy,VisionSystem vision,Action<EntityId,EntityId> kill)
     {
         for(int i=0;i<s.Capacity;i++)
         {
@@ -39,10 +39,10 @@ internal sealed class CombatSystem
             if(!enabled){combat.Windup=0;continue;}
             if(tick%8==0 || (states[i]==UnitState.Attacking && s.IsAlive(commands[i].Target)))
             {
-                if(states[i]==UnitState.Attacking && Enemy(s,i,commands[i].Target))combat.Target=commands[i].Target;
-                else if(!Enemy(s,i,combat.Target))combat.Target=Acquire(s,i,definition.Vision,combat.LastAttacker);
+                if(states[i]==UnitState.Attacking && Enemy(s,vision,i,commands[i].Target))combat.Target=commands[i].Target;
+                else if(!Enemy(s,vision,i,combat.Target))combat.Target=Acquire(s,vision,i,definition.Vision,combat.LastAttacker);
             }
-            if(!Enemy(s,i,combat.Target)){combat.Windup=0;continue;}
+            if(!Enemy(s,vision,i,combat.Target)){combat.Windup=0;continue;}
             Fix2 target=s.Transform[combat.Target.Index].Position;
             Fix64 range=Fix64.FromInt(definition.Range);
             bool inRange=(target-s.Transform[i].Position).LengthSquared<=range*range;
@@ -79,15 +79,15 @@ internal sealed class CombatSystem
             else {shot.Position+=delta/distance*step;if(--shot.Life<=0)shot.Active=false;}
         }
     }
-    private static bool Enemy(EntityStore s,int source,EntityId target)=>s.IsAlive(target)&&s.Owner[target.Index].Player!=s.Owner[source].Player;
-    private static EntityId Acquire(EntityStore s,int source,int vision,EntityId attacker)
+    private static bool Enemy(EntityStore s,VisionSystem vision,int source,EntityId target)=>s.IsAlive(target)&&vision.CanSee(s,s.Owner[source].Player,target)&&s.Owner[target.Index].Player!=s.Owner[source].Player;
+    private static EntityId Acquire(EntityStore s,VisionSystem vision,int source,int sight,EntityId attacker)
     {
-        Fix64 limit=Fix64.FromInt(vision*vision);
-        if(Enemy(s,source,attacker)&&(s.Transform[attacker.Index].Position-s.Transform[source].Position).LengthSquared<=limit)return attacker;
+        Fix64 limit=Fix64.FromInt(sight*sight);
+        if(Enemy(s,vision,source,attacker)&&(s.Transform[attacker.Index].Position-s.Transform[source].Position).LengthSquared<=limit)return attacker;
         EntityId result=EntityId.None;
         for(int i=0;i<s.Capacity;i++)
         {
-            var id=s.IdAt(i);if(!Enemy(s,source,id))continue;
+            var id=s.IdAt(i);if(!Enemy(s,vision,source,id))continue;
             Fix64 distance=(s.Transform[i].Position-s.Transform[source].Position).LengthSquared;
             if(distance<limit){limit=distance;result=id;}
         }

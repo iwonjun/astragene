@@ -79,7 +79,7 @@ public sealed class EntityStore
             h.AddInt32(Combat[i].LastAttacker.Index); h.AddUInt64(Combat[i].LastAttacker.Generation);
             h.AddInt32(Cargo[i].Ore); h.AddInt32(Cargo[i].Plasma); h.AddInt32(Cargo[i].ResourceNode);
             h.AddInt32(Production[i].Definition); h.AddInt32(Production[i].RemainingTicks); h.AddInt32(Production[i].QueueCount);
-            h.AddInt32(Vision[i].Radius); h.AddByte(Vision[i].Detector ? (byte)1 : (byte)0);
+            h.AddInt32(Vision[i].Radius); h.AddByte(Vision[i].Detector ? (byte)1 : (byte)0); h.AddByte(Vision[i].Cloaked ? (byte)1 : (byte)0);
         }
         return h.Value;
     }

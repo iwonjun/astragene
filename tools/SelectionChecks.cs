@@ -30,7 +30,7 @@ public partial class SelectionChecks : Node
         selection.CameraJumpRequested += _=>jumped=true;
         selection._UnhandledInput(new InputEventKey {Pressed=true,PhysicalKeycode=Key.Key1});
         if(!jumped)return "Repeated group did not request camera jump";
-        Vector2 click=camera.UnprojectPosition(MatchBridge.ToView(bridge.World.Entities.Get(bridge.World.Entities.IdAt(0)).Transform.Position));
+        Vector2 click=camera.UnprojectPosition(MatchBridge.ToView(bridge.View.Get(bridge.View.IdAt(0)).Transform.Position));
         selection.SelectScreenRect(new Rect2(click,Vector2.Zero),camera,false,false);
         if(selection.SelectedCount!=1)return "Single click selection failed";
         selection.SelectScreenRect(new Rect2(click,Vector2.Zero),camera,true,false);

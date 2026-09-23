@@ -56,7 +56,7 @@ internal sealed class EconomySystem
         if(extractor&&(resource<0||!_gas[resource]))return false;
         for(int yy=y;yy<y+d.Width;yy++)for(int xx=x;xx<x+d.Width;xx++)
         {
-            if(!Grid.Contains(xx,yy)||(!world.Map.Grid[xx,yy].Buildable&&!(extractor&&xx==x&&yy==y))||!Visible(s,c.Player,xx,yy))return false;
+            if(!Grid.Contains(xx,yy)||(!world.Map.Grid[xx,yy].Buildable&&!(extractor&&xx==x&&yy==y))||!world.VisibleTo(c.Player,xx,yy))return false;
             for(int i=0;i<s.Capacity;i++)
             {
                 if(s.IdAt(i)==EntityId.None||i==worker)continue;
@@ -89,12 +89,6 @@ internal sealed class EconomySystem
     private bool HasExtractor(EntityStore s,int player,int node)
     {
         for(int i=0;i<s.Capacity;i++)if(s.IdAt(i)!=EntityId.None&&s.Type[i].IsBuilding&&s.Owner[i].Player==player&&s.Type[i].Definition is 5 or 11&&_constructionLeft[i]==0&&s.Transform[i].Position.X.FloorToInt()==_nodeX[node]&&s.Transform[i].Position.Y.FloorToInt()==_nodeY[node])return true;
-        return false;
-    }
-    private static bool Visible(EntityStore s,int player,int x,int y)
-    {
-        for(int i=0;i<s.Capacity;i++)if(s.IdAt(i)!=EntityId.None&&s.Owner[i].Player==player)
-        {int dx=s.Transform[i].Position.X.FloorToInt()-x,dy=s.Transform[i].Position.Y.FloorToInt()-y;if(dx*dx+dy*dy<=s.Vision[i].Radius*s.Vision[i].Radius)return true;}
         return false;
     }
     internal void Tick(SimWorld world,UnitState[] states,Command[] commands,MovementSystem movement)

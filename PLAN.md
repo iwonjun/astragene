@@ -219,3 +219,18 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - Release 경제 시나리오 5/5 통과. 초기 Ore 450에서 채집, 일꾼 12, 병영, 보급, Trooper 생산 수행.
 - 생산 큐5, 취소100%환불, 두 진영 건설 차이, 노드2슬롯, 가스 추출기 필요, 업그레이드 순차 3단계 및 속도 반영 검증.
 - 자원 규칙은 balance/rules.csv에서 코드 생성. 생산 큐가 인구를 예약하고 보급 상실 시 완성을 차단.
+
+## Phase 8 — 진행 중
+### 변경 파일과 이유
+- src/Sim/Systems/VisionSystem.cs: 플레이어별 정수 visionCount/탐색여부, 원형 오프셋 사전계산, 이동/생성/삭제 때만 스탬프 갱신, 고지대 차폐.
+- src/Sim/World/VisibilityFilter.cs: 플레이어별 조회 API, 적 상태 필터와 건물 마지막 스냅샷.
+- src/Sim/World/SimWorld.cs: EntityStore 외부 접근 internal로 제한, 공개 필터 조회만 허용, 시야 상태 해시.
+- game/scripts/Bridge/MatchBridge.cs, View/SelectionController.cs: 직접 EntityStore 조회 제거, VisibilityFilter로 전환.
+- src/Sim/Entities/Components.cs: Cloaked/Detector 훅.
+- tests/Sim.Tests/VisionTests.cs: 중첩 카운트, 탐색 유지, 고지대, 유령건물, 은폐/탐지, 공개 우회 API 정적 검사.
+
+### Phase 8 완료
+- Release Sim 테스트 41/41 및 Godot 통합 테스트 2/2 통과.
+- 시야 변화가 없으면 스탬프 갱신 없음, 중첩 카운트 제거/탐색 유지, 고지대 차폐, 은폐/탐지 및 건물 마지막 스냅샷 검증.
+- SimWorld의 EntityStore/상태/자원/이벤트 직접 조회를 internal로 제한하고 외부는 플레이어 결합 VisibilityFilter 사용.
+- 보이지 않는 적 대상 명령 거부 및 Follow의 숨은 적 추적 차단.

@@ -60,7 +60,7 @@ public partial class SelectionController : Node2D
                 _selected.Clear();foreach(var id in _groups[group])if(IsFriendly(id))_selected.Add(id);
                 ulong now=Time.GetTicksMsec();
                 if(group==_lastGroup && now-_lastGroupTime<350 && _selected.Count>0)
-                    EmitSignal(SignalName.CameraJumpRequested,MatchBridge.ToView(_bridge.World.Entities.Get(_selected[0]).Transform.Position));
+                    EmitSignal(SignalName.CameraJumpRequested,MatchBridge.ToView(_bridge.View.Get(_selected[0]).Transform.Position));
                 _lastGroup=group;_lastGroupTime=now;
             }
         }
@@ -73,7 +73,7 @@ public partial class SelectionController : Node2D
         var candidates=new List<EntityId>();
         foreach(int i in _bridge.FriendlyIds())
         {
-            var id=_bridge.World.Entities.IdAt(i);var e=_bridge.World.Entities.Get(id);var position=MatchBridge.ToView(e.Transform.Position);
+            var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var position=MatchBridge.ToView(e.Transform.Position);
             if(camera.IsPositionBehind(position))continue;
             Vector2 point=camera.UnprojectPosition(position);
             if(click?point.DistanceTo(rectangle.Position)<14:rectangle.HasPoint(point))
@@ -84,11 +84,11 @@ public partial class SelectionController : Node2D
             candidates.Clear();
             foreach(int i in _bridge.FriendlyIds())
             {
-                var id=_bridge.World.Entities.IdAt(i);var e=_bridge.World.Entities.Get(id);var p=MatchBridge.ToView(e.Transform.Position);
+                var id=_bridge.View.IdAt(i);var e=_bridge.View.Get(id);var p=MatchBridge.ToView(e.Transform.Position);
                 if(e.Type.Definition==type && e.Type.IsBuilding==building && !camera.IsPositionBehind(p) && GetViewport().GetVisibleRect().HasPoint(camera.UnprojectPosition(p)))candidates.Add(id);
             }
         }
         foreach(var id in candidates){if(toggle && _selected.Contains(id))_selected.Remove(id);else if(_selected.Count<200 && !_selected.Contains(id))_selected.Add(id);}
     }
-    private bool IsFriendly(EntityId id)=>_bridge.World.Entities.IsAlive(id) && _bridge.World.Entities.Get(id).Owner.Player==_bridge.LocalPlayer;
+    private bool IsFriendly(EntityId id)=>_bridge.View.IsAlive(id) && _bridge.View.Get(id).Owner.Player==_bridge.LocalPlayer;
 }
