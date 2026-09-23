@@ -24,6 +24,7 @@ func _initialize() -> void:
 [ext_resource type="FontFile" path="res://game/assets/fonts/RobotoMono.ttf" id="5"]
 [ext_resource type="Script" path="res://game/scripts/UI/Portrait.cs" id="6"]
 [ext_resource type="Script" path="res://game/scripts/UI/PlacementPreview.cs" id="7"]
+[ext_resource type="Script" path="res://game/scripts/UI/Tutorial.cs" id="8"]
 
 [sub_resource type="ShaderMaterial" id="Glass"]
 shader = ExtResource("3")
@@ -78,6 +79,16 @@ script = ExtResource("7")')
  label("Help","Root","WASD 이동  ·  휠 줌  ·  Ctrl+숫자 그룹  ·  Enter 채팅",350,591,740,28,14)
  label("ChatLog","Root","",24,395,560,150,16)
  node("ChatInput","LineEdit","Root",rect(24,553,560,34)+'visible = false\nmax_length = 160\nplaceholder_text = "전체 메시지 (Tab: 팀/전체)"')
+ panel("Tutorial",330,86,780,196)
+ node("Accent","ColorRect","Root/Tutorial",rect(0,0,6,196)+'color = Color(0.3,0.9,1,1)
+mouse_filter = 2')
+ label("Step","Root/Tutorial","",24,10,200,24,14)
+ label("Title","Root/Tutorial","",24,32,730,34,24)
+ label("Body","Root/Tutorial","",24,70,730,80,17)
+ label("Progress","Root/Tutorial","",24,156,420,28,16)
+ button("Next","Root/Tutorial","다음",512,150,120,36)
+ button("Close","Root/Tutorial","끝내기",642,150,120,36)
+ node("Director","Node","Root/Tutorial",'script = ExtResource("8")')
  panel("Pause",510,215,420,400)
  label("Title","Root/Pause","일시 정지",28,23,360,42,28)
  button("Resume","Root/Pause","계속하기",30,93,360,48)
@@ -156,28 +167,29 @@ theme = SubResource("Theme")')
  label("Title","Root","ASTRAGENE",80,54,700,74,58)
  label("Subtitle","Root","LUMINA 연합 × VERGE 군체  ·  결정론적 락스텝 RTS",84,128,900,32,18)
  panel("Menu",80,188,560,660)
- label("SoloTitle","Root/Menu","싱글 플레이",24,16,500,28,15)
- button("Local","Root/Menu","AI와 대전",24,50,330,50)
- node("Difficulty","OptionButton","Root/Menu",rect(366,50,170,50)+'focus_mode = 0')
- label("NetTitle","Root/Menu","멀티플레이 (직접 IP)",24,120,500,28,15)
- node("Address","LineEdit","Root/Menu",rect(24,154,330,46)+'text = "127.0.0.1"
+ label("SoloTitle","Root/Menu","싱글 플레이",24,12,500,26,15)
+ button("Tutorial","Root/Menu","▶ 튜토리얼  ·  처음이라면 여기부터",24,40,512,48)
+ button("Local","Root/Menu","AI와 대전",24,98,330,46)
+ node("Difficulty","OptionButton","Root/Menu",rect(366,98,170,46)+'focus_mode = 0')
+ label("NetTitle","Root/Menu","멀티플레이 (직접 IP)",24,158,500,26,15)
+ node("Address","LineEdit","Root/Menu",rect(24,186,330,44)+'text = "127.0.0.1"
 placeholder_text = "호스트 IP"')
- node("Port","LineEdit","Root/Menu",rect(366,154,170,46)+'text = "27415"
+ node("Port","LineEdit","Root/Menu",rect(366,186,170,44)+'text = "27415"
 placeholder_text = "포트"')
- button("Host","Root/Menu","방 만들기 (호스트)",24,212,250,50)
- button("Join","Root/Menu","접속",286,212,250,50)
- label("FactionLabel","Root/Menu","진영",24,284,120,30,15)
- node("Faction","OptionButton","Root/Menu",rect(24,314,250,46)+'focus_mode = 0')
- label("MapLabel","Root/Menu","맵",286,284,120,30,15)
- node("Map","OptionButton","Root/Menu",rect(286,314,250,46)+'focus_mode = 0')
- node("Ready","CheckButton","Root/Menu",rect(24,378,250,46)+'text = "준비 완료"
+ button("Host","Root/Menu","방 만들기 (호스트)",24,240,250,46)
+ button("Join","Root/Menu","접속",286,240,250,46)
+ label("FactionLabel","Root/Menu","진영",24,298,120,28,15)
+ node("Faction","OptionButton","Root/Menu",rect(24,326,250,44)+'focus_mode = 0')
+ label("MapLabel","Root/Menu","맵",286,298,120,28,15)
+ node("Map","OptionButton","Root/Menu",rect(286,326,250,44)+'focus_mode = 0')
+ node("Ready","CheckButton","Root/Menu",rect(24,382,250,44)+'text = "준비 완료"
 focus_mode = 0
 disabled = true')
- button("Start","Root/Menu","경기 시작",286,378,250,46)
- button("Leave","Root/Menu","방 나가기",24,436,512,42)
- button("Replay","Root/Menu","마지막 리플레이 보기",24,506,250,46)
- button("Settings","Root/Menu","설정",286,506,250,46)
- button("Quit","Root/Menu","종료",24,574,512,46)
+ button("Start","Root/Menu","경기 시작",286,382,250,44)
+ button("Leave","Root/Menu","방 나가기",24,436,512,40)
+ button("Replay","Root/Menu","마지막 리플레이 보기",24,496,250,44)
+ button("Settings","Root/Menu","설정",286,496,250,44)
+ button("Quit","Root/Menu","종료",24,552,512,44)
  panel("Room",668,188,692,660)
  label("RoomTitle","Root/Room","대기실",24,16,640,34,22)
  label("Players","Root/Room","방을 만들거나 호스트에 접속하세요.",24,64,640,300,20)

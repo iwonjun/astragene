@@ -35,6 +35,9 @@ public partial class Lobby : Control
         _mapHash = MapLoader.Load(FileAccess.GetFileAsBytes(MatchLaunch.DefaultMap)).Hash();
 
         _local.Pressed += StartLocal;
+        var tutorial = GetNode<Button>(menu + "Tutorial"); tutorial.Pressed += StartTutorial;
+        _firstRun = !FileAccess.FileExists(Tutorial.DoneFlag);
+        _tutorialButton = tutorial;
         _host.Pressed += () => Host(ParsePort(_port.Text));
         _join.Pressed += () => Join(_address.Text.Trim(), ParsePort(_port.Text));
         _faction.ItemSelected += index => _net?.SetFaction((int)index);
@@ -71,6 +74,15 @@ public partial class Lobby : Control
 
     private void OpenSettings() { if (ResourceLoader.Exists("res://game/scenes/settings.tscn")) GetTree().ChangeSceneToFile("res://game/scenes/settings.tscn"); }
 
+    private bool _firstRun;
+    private Button _tutorialButton = null!;
+    private void StartTutorial()
+    {
+        Disconnect();
+        MatchLaunch.ResetLocal(); MatchLaunch.Tutorial = true;
+        MatchLaunch.Factions = new[] { 0, 1 }; MatchLaunch.Seed = 1;
+        GetTree().ChangeSceneToFile("res://game/scenes/match.tscn");
+    }
     private void StartLocal()
     {
         Disconnect();
@@ -132,7 +144,12 @@ public partial class Lobby : Control
         if (_net != null) { Detach(_net); _net.Close(); } _net = null; MatchLaunch.Session = null; _ready.SetPressedNoSignal(false); Refresh();
     }
 
-    public override void _Process(double delta) => _net?.Poll();
+    public override void _Process(double delta)
+    {
+        _net?.Poll();
+        // First launch: make the tutorial the obvious first click.
+        if (_firstRun) _tutorialButton.Modulate = Colors.White.Lerp(new Color(1.5f, 1.3f, 0.5f), 0.5f + 0.5f * Mathf.Sin(Time.GetTicksMsec() * 0.006f));
+    }
     public override void _ExitTree() { if (_net != null) Detach(_net); }
 
     private void Refresh()
@@ -142,6 +159,7 @@ public partial class Lobby : Control
         _host.Disabled = connected; _join.Disabled = connected; _address.Editable = !connected; _port.Editable = !connected;
         _ready.Disabled = !inLobby; _leave.Disabled = !connected; _start.Visible = !connected || _net!.IsHost; _start.Disabled = !(inLobby && _net!.CanStart);
         _local.Disabled = connected;
+        if (!connected && _firstRun && _status.Text == "") _status.Text = "처음이신가요? 왼쪽 위 '튜토리얼'에서 5분이면 기본 조작을 배울 수 있습니다.";
         if (!connected) { _players.Text = "방을 만들거나 호스트에 접속하세요.\n\n· 최대 2인 (Duel 맵)\n· 모든 PC가 전체 시뮬레이션을 계산하는 락스텝 방식\n· 전장의 안개는 화면 표시용이며 치트 방지 수단이 아닙니다."; _seed.Text = ""; return; }
         if (_net!.Phase == SessionPhase.Connecting) { _players.Text = "호스트 응답 대기 중…"; return; }
         string text = "";

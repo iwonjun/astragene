@@ -64,6 +64,7 @@ public partial class MatchHud : CanvasLayer
         var r=_bridge.View.Resources;ResourceDelta(r.Ore,r.Plasma);float speed=1-Mathf.Exp(-(float)delta*12);_shownOre=Mathf.Lerp(_shownOre,r.Ore,speed);_shownPlasma=Mathf.Lerp(_shownPlasma,r.Plasma,speed);
         _resources.Text=$"ORE {Mathf.RoundToInt(_shownOre),5}   PLASMA {Mathf.RoundToInt(_shownPlasma),4}   SUPPLY {r.UsedSupply} / {r.MaxSupply}";
         _resources.Modulate=r.UsedSupply>=r.MaxSupply?new Color(1,0.5f,0.45f):Colors.White;
+        if(_highlight>=0){float glow=0.5f+0.5f*Mathf.Sin(Time.GetTicksMsec()*0.008f);_buttons[_highlight].Modulate=new Color(1,1,1).Lerp(new Color(1.6f,1.35f,0.4f),glow);}
         if(_noticeTime>0){_noticeTime-=(float)delta;_notice.Modulate=new Color(1,1,1,Mathf.Min(1,_noticeTime));}
     }
     public void Refresh()
@@ -105,6 +106,28 @@ public partial class MatchHud : CanvasLayer
         }
         if(_bridge.View.Surrendered&&!_surrendered){_surrendered=true;_bridge.IsPaused=true;_pause.Show();_pause.GetNode<Label>("Title").Text="항복했습니다";_pause.GetNode<Button>("Surrender").Disabled=true;_pause.GetNode<Button>("Resume").Disabled=true;}
     }
+    public int MenuLevel=>_menu;
+    public string KeyName(int slot)=>_keys[slot].ToString();
+    private int _highlight=-1;
+    /// <summary>Tutorial glow on one command-card slot; -1 clears it.</summary>
+    public void Highlight(int slot){if(_highlight>=0&&_highlight!=slot)_buttons[_highlight].Modulate=Colors.White;_highlight=slot;}
+    private static string Describe(CommandType type)=>type switch
+    {
+        CommandType.Move=>"이동: 클릭한 곳으로 이동합니다. 적을 만나도 싸우지 않습니다.",
+        CommandType.AttackMove=>"공격 이동: 이동하면서 만나는 적과 싸웁니다.",
+        CommandType.Stop=>"정지: 현재 명령과 예약을 취소합니다.",
+        CommandType.Hold=>"위치 사수: 제자리에서 사거리 안의 적만 공격합니다.",
+        CommandType.Patrol=>"순찰: 현재 위치와 클릭한 곳을 오가며 적을 공격합니다.",
+        CommandType.Follow=>"따라가기: 선택한 아군을 따라갑니다.",
+        CommandType.Gather=>"채집: 광물 결정이나 완성된 추출기를 클릭하세요.",
+        CommandType.Repair=>"수리: LUMINA 건물을 광물로 수리합니다.",
+        CommandType.Build=>"건설: 지을 건물을 고른 뒤 빈 땅을 클릭합니다.",
+        CommandType.Train=>"생산: 자원과 보급이 있으면 대기열에 추가합니다.",
+        CommandType.Research=>"연구: 업그레이드를 진행합니다.",
+        CommandType.Rally=>"집결 지점: 새로 생산된 유닛이 모일 곳을 정합니다.",
+        CommandType.Cancel=>"취소: 마지막 대기열(또는 건설)을 취소하고 전액 돌려받습니다.",
+        _=>""
+    };
     public int BuildingPreview=>_target is Card card && card.Type==CommandType.Build?card.Definition:-1;
     public MatchBridge Bridge=>_bridge;
     public SelectionController Selection=>_selection;
@@ -139,7 +162,7 @@ public partial class MatchHud : CanvasLayer
                 if(DefDatabase.Units[e.Type.Definition].Worker){_cards[6]=new Card("채집",CommandType.Gather,Target:true);_cards[7]=new Card("수리",CommandType.Repair,Target:true);_cards[8]=new Card("건설",CommandType.Build,Menu:1);}
             }
         }
-        for(int i=0;i<12;i++){_buttons[i].Disabled=_cards[i]==null;_buttons[i].Text=_cards[i] is Card c?$"[{_keys[i]}] {c.Label}":"";}
+        for(int i=0;i<12;i++){_buttons[i].Disabled=_cards[i]==null;_buttons[i].Text=_cards[i] is Card c?$"[{_keys[i]}] {c.Label}":"";_buttons[i].TooltipText=_cards[i] is Card t?(t.Menu!=0?(t.Menu==1?"건설 메뉴를 엽니다.":"이전 메뉴로 돌아갑니다."):Describe(t.Type)):"";}
     }
     public void ActivateSlot(int slot)
     {
@@ -150,6 +173,7 @@ public partial class MatchHud : CanvasLayer
     }
     private void Send(Card card,Vector3 point,EntityId target)
     {
+        if(card.Type==CommandType.Gather && _bridge.ResourceNodeAt(point)<0 && (target==EntityId.None || !_bridge.View.Get(target).Type.IsBuilding)){Notify("광물 결정 또는 완성된 가스 추출기를 클릭하세요.");return;}
         if(card.Type==CommandType.Gather){if(target!=EntityId.None && _bridge.View.Get(target).Type.IsBuilding)point=_bridge.SurfacePosition(_bridge.View.Get(target).Transform.Position);card=card with {Definition=_bridge.ResourceNodeAt(point)};target=EntityId.None;}
         if(card.Type is CommandType.Build or CommandType.Train or CommandType.Research)
         {

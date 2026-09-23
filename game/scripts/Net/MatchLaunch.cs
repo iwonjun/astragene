@@ -22,11 +22,13 @@ public static class MatchLaunch
     public static string ReplayOut { get; set; } = "";
     /// <summary>-1 no opponent, 0 easy, 1 medium, 2 hard; the computer opponent of local matches.</summary>
     public static int AiDifficulty { get; set; } = -1;
+    /// <summary>Guided first match: passive opponent, idle starting workers, step-by-step panel.</summary>
+    public static bool Tutorial { get; set; }
 
     public static void ResetLocal()
     {
         Mode = MatchMode.Local; LocalPlayer = 0; Factions = new[] { 0, 1 }; Players = new[] { 0, 1 }; Seed = 1; InputDelay = 3;
-        MapPath = DefaultMap; AiDifficulty = -1; Session?.Close(); Session = null; Replay = null;
+        MapPath = DefaultMap; AiDifficulty = -1; Tutorial = false; Session?.Close(); Session = null; Replay = null;
     }
 
     /// <summary>Command line value such as <c>--replay-out=user://soak.agr</c> after the <c>--</c> separator.</summary>

@@ -32,13 +32,17 @@ public partial class MatchBridge : Node
         if(Mode==MatchMode.Network && MatchLaunch.Session is NetworkSession session && Runner!=null)
         {
             LocalPlayer=session.LocalPlayer;var world=new SimWorld(map,spawns,MatchLaunch.Seed);
-            Initialize(world);Runner.Begin(world,session);return;
+            Initialize(world);Runner.Begin(world,session);
+            foreach(var c in StartingOrders())Runner.QueueLocal(c);
+            return;
         }
         Mode=MatchMode.Local;LocalPlayer=MatchLaunch.LocalPlayer;
         // Local matches seat the computer opponent inside the simulation, so replays reproduce it exactly.
         var ai=MatchLaunch.AiDifficulty is >=0 and <=2?new[]{new AiSeat(1-LocalPlayer,(AiDifficulty)MatchLaunch.AiDifficulty)}:null;
         Initialize(new SimWorld(map,spawns,MatchLaunch.Seed,ai:ai));
         LocalReplay=new ReplayLog(map,spawns,MatchLaunch.Seed,ai:ai);
+        // Starting workers mine right away (the tutorial teaches it instead); they are ordinary recorded commands.
+        if(!MatchLaunch.Tutorial && !MatchLaunch.Flag("render-benchmark") && !MatchLaunch.Flag("art-capture"))_pending.AddRange(StartingOrders());
     }
     public override void _PhysicsProcess(double delta)
     {
@@ -58,6 +62,20 @@ public partial class MatchBridge : Node
     }
     public string SaveLocalReplay()=>LocalReplay==null || LocalReplay.TickCount==0?"":MatchLaunch.SaveReplay(LocalReplay);
     public override void _ExitTree(){if(Mode==MatchMode.Local && !MatchLaunch.Flag("render-benchmark") && !MatchLaunch.Flag("art-capture"))SaveLocalReplay();}
+    /// <summary>Gather orders spreading the local player's starting workers two per nearest ore deposit.</summary>
+    public List<Command> StartingOrders()
+    {
+        var orders=new List<Command>();EntitySnapshot? hq=null;var workers=new List<EntitySnapshot>();
+        for(int i=0;i<View.Capacity;i++){var id=View.IdAt(i);if(id==EntityId.None)continue;var e=View.Get(id);if(e.Owner.Player!=LocalPlayer)continue;
+            if(e.Type.IsBuilding){if(e.Type.Definition is 0 or 6)hq??=e;}else if(RtsGame.Sim.Data.DefDatabase.Units[e.Type.Definition].Worker)workers.Add(e);}
+        if(hq is not EntitySnapshot h)return orders;
+        int hx=h.Transform.Position.X.FloorToInt(),hy=h.Transform.Position.Y.FloorToInt();
+        var nodes=new List<(int Distance,int Node)>();
+        for(int y=0;y<128;y++)for(int x=0;x<128;x++){int n=World.Map.Grid[x,y].ResourceNodeId;if(n>=0 && n%10 is not (5 or 9))nodes.Add(((x-hx)*(x-hx)+(y-hy)*(y-hy),n));}
+        nodes.Sort();
+        for(int i=0;i<workers.Count && nodes.Count>0;i++)orders.Add(new Command(CommandType.Gather,LocalPlayer,workers[i].Id,EntityId.None,Fix2.Zero,nodes[(i/2)%nodes.Count].Node));
+        return orders;
+    }
     public EntityId PickEntity(Vector3 point)
     {
         EntityId result=EntityId.None;float best=1.8f;
