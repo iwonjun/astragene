@@ -12,6 +12,8 @@
 
 [ext_resource type="Script" path="res://game/scripts/Net/LockstepRunner.cs" id="8"]
 
+[ext_resource type="Script" path="res://game/scripts/View/AudioDirector.cs" id="9"]
+
 [node name="Match" type="Node" unique_id=67472705]
 
 [node name="Bridge" type="Node" parent="." unique_id=1001]
@@ -41,3 +43,6 @@ script = ExtResource("6")
 
 [node name="Net" type="Node" parent="." unique_id=1009]
 script = ExtResource("8")
+
+[node name="Audio" type="Node" parent="." unique_id=1010]
+script = ExtResource("9")

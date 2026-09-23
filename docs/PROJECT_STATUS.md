@@ -21,28 +21,22 @@
 | Phase 10 | 완료 | 자원 HUD, 미니맵, 선택·생산 패널, 명령 카드, 건설 미리보기, 채팅, 일시정지, 항복, 단축키 |
 | Phase 11 | 완료 | ENet 락스텝, 로비·시드 합의, 대기 오버레이, 해시 검증·desync 덤프, 리플레이 |
 | Phase 12 | 완료 | 결정론 AI 3단계(Easy/Medium/Hard), 계층형 두뇌·매니저·마이크로 |
+| 튜토리얼 | 완료 | 9단계 안내, 목표 마커·버튼 강조, 첫 실행 유도 |
+| Phase 13 | 완료 | 승패·결과 화면·APM, 오디오 버스/보이스/SFX/BGM, 설정, 프로파일링·최적화, 방어탑, 3플랫폼 프리셋 |
 
 ## 검증 결과
 
-- 순수 Sim 테스트 56/56 통과.
-- Godot 통합 테스트 6/6 통과.
+- 순수 Sim 테스트 62/62 통과.
+- Godot 통합 테스트 10/10 통과.
 - Debug C# 빌드 경고 0개, 오류 0개.
 - Phase 9 실제 GPU 측정: RTX 4060 Ti / Forward+ / 1600×900에서 400기 표시 구간 평균 0.9503ms, 최대 드로우콜 31회.
 - 화면 결과: `docs/phase9-1.png`, `docs/phase9-2.png`, `docs/phase9-3.png`, `docs/phase10-hud.png`.
 - Phase 9 측정 조건과 재현 명령은 `docs/phase9-validation.md`에 기록.
 - 최신 완료 커밋: `14d3e8a phase-10: connect holographic HUD and command-driven controls`.
 
-## 현재 진행 중
+## 현재 상태
 
-Phase 13 폴리싱. Phase 11 검증은 docs/phase11-validation.md(두 프로세스 15분, 무손실·200ms+2% 손실 모두 desync 0).
-
-## 남은 작업
-
-### Phase 13 — 폴리싱과 출시 빌드
-
-- 보이스/SFX/BGM/오디오 버스, 승패·결과 화면, APM 그래프.
-- 해상도·품질·볼륨·스크롤·단축키 설정.
-- 상위 틱 시스템 계측, 500 엔티티 장기 프로파일링, Windows/Linux/macOS 빌드.
+Phase 0~13 완료. 남은 일은 export 템플릿 설치 후 실제 배포 빌드 생성, 그리고 플레이 테스트 기반 밸런스 조정이다.
 
 ## 실행과 검증
 

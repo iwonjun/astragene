@@ -37,6 +37,10 @@ public sealed class SimWorld
     private readonly AiSeat[] _aiSeats;
     private readonly VisibilityFilter?[] _aiViews=new VisibilityFilter?[4];
     public ReadOnlySpan<AiSeat> AiSeats=>_aiSeats;
+    private readonly MatchStats _stats=new();
+    private readonly int[] _buildingCount=new int[4];
+    /// <summary>Optional diagnostics hook. The simulation only marks sections; timing lives outside Sim.</summary>
+    public ITickProfiler? Profiler {get;set;}
     public SimWorld(MapData map,ReadOnlySpan<SpawnSpec> spawns,ulong seed=1,int capacity=1024,int? initialOre=null,int? initialPlasma=null,AiSeat[]? ai=null)
     {
         _aiSeats=ai==null?Array.Empty<AiSeat>():(AiSeat[])ai.Clone();_ai=new AiPlayer[_aiSeats.Length];
@@ -46,7 +50,7 @@ public sealed class SimWorld
         _queues=new CommandQueue[capacity]; _states=new UnitState[capacity]; _active=new Command[capacity]; _patrolOrigin=new Fix2[capacity];
         for(int i=0;i<capacity;i++)_queues[i]=new CommandQueue();
         for(int p=0;p<4;p++){if(initialOre.HasValue)_economy.Ore[p]=initialOre.Value;if(initialPlasma.HasValue)_economy.Plasma[p]=initialPlasma.Value;}
-        foreach(var spawn in spawns) Spawn(spawn);
+        foreach(var spawn in spawns){Spawn(spawn);_stats.Participant[spawn.Player]=true;}
         _vision.Update(Entities,Map);
     }
     internal EntityId Spawn(SpawnSpec spawn)
@@ -70,19 +74,37 @@ public sealed class SimWorld
     internal bool VisibleTo(int player,int x,int y)=>_vision.At(player,x,y)==Visibility.Visible;
     internal PlayerResources Resources(int player)=>_production.Resources(Entities,_economy,player);
     internal void RallyProduced(EntityId parent,EntityId child){var target=Entities.Movement[parent.Index].Destination;if(target!=Fix2.Zero)Accept(new Command(CommandType.Move,Entities.Owner[parent.Index].Player,child,EntityId.None,target));}
-    internal void Emit(int player,string kind,EntityId id)=>_events.Enqueue(new(_clock.Tick,player,kind,id));
+    internal void Emit(int player,string kind,EntityId id)
+    {
+        if((uint)player<4){if(kind=="UnitComplete")_stats.UnitsProduced[player]++;else if(kind=="BuildComplete")_stats.BuildingsBuilt[player]++;}
+        Enqueue(new(_clock.Tick,player,kind,id));
+    }
+    // Events are presentation data; an unread queue is bounded so headless runs cannot grow without limit.
+    private void Enqueue(SimEvent e){if(_events.Count>=4096)_events.Dequeue();_events.Enqueue(e);}
+    internal bool MatchOver=>_stats.Over;
+    internal int Winner=>_stats.Winner;
+    internal long MatchEndTick=>_stats.EndTick;
+    internal PlayerStats Stats(int player)=>new(_economy.OreGathered[player],_economy.PlasmaGathered[player],_stats.UnitsProduced[player],_stats.BuildingsBuilt[player],_stats.UnitsLost[player],_stats.Kills[player],_stats.Commands[player],_stats.Defeated[player]);
+    internal int[] Apm(int player)=>_stats.Apm(player);
+    internal bool Participant(int player)=>_stats.Participant[player];
     internal UnitState State(EntityId id)=>Entities.IsAlive(id)?_states[id.Index]:UnitState.Idle;
     internal bool TryDequeueEvent(out SimEvent value)=>_events.TryDequeue(out value);
     public void Tick(ReadOnlySpan<Command> commands)
     {
+        var profiler=Profiler;
+        profiler?.Begin(TickSection.Commands);
         foreach(Command command in commands)if(!Accept(command))Emit(command.Player,"Rejected",command.Entity);
+        profiler?.End(TickSection.Commands);
         // Computer players decide from their filtered view and submit ordinary commands through Accept.
+        profiler?.Begin(TickSection.Ai);
         foreach(var ai in _ai)
         {
             if(!ai.ShouldThink(_clock.Tick))continue;
             var view=_aiViews[ai.Player]??=ViewFor(ai.Player);
             foreach(Command command in ai.Think(view,Map,_clock.Tick))Accept(command);
         }
+        profiler?.End(TickSection.Ai);
+        profiler?.Begin(TickSection.Orders);
         for(int i=0;i<Entities.Capacity;i++)
         {
             var id=Entities.IdAt(i);if(id==EntityId.None)continue;
@@ -98,9 +120,25 @@ public sealed class SimWorld
             if((_states[i]==UnitState.Moving && !Entities.Movement[i].Active) || (_states[i]==UnitState.Following && !Entities.IsAlive(_active[i].Target)))_states[i]=UnitState.Idle;
             if(_states[i]==UnitState.Idle && _queues[i].TryDequeue(out var queued))Execute(queued);
         }
-        _vision.Update(Entities,Map);
-        _economy.Tick(this,_states,_active,_movement); _production.Tick(this,_economy);
-        _movement.Tick(Entities); _vision.Update(Entities,Map); _combat.Tick(Entities,Map,_clock.Tick,_states,_active,_movement,_economy,_vision,Kill); _vision.Update(Entities,Map); _clock.Advance();
+        profiler?.End(TickSection.Orders);
+        profiler?.Begin(TickSection.Vision);_vision.Update(Entities,Map);profiler?.End(TickSection.Vision);
+        profiler?.Begin(TickSection.Economy);_economy.Tick(this,_states,_active,_movement);profiler?.End(TickSection.Economy);
+        profiler?.Begin(TickSection.Production);_production.Tick(this,_economy);profiler?.End(TickSection.Production);
+        profiler?.Begin(TickSection.Movement);_movement.Tick(Entities);profiler?.End(TickSection.Movement);
+        profiler?.Begin(TickSection.Vision);_vision.Update(Entities,Map);profiler?.End(TickSection.Vision);
+        profiler?.Begin(TickSection.Combat);_combat.Tick(Entities,Map,_clock.Tick,_states,_active,_movement,_economy,_vision,Kill);profiler?.End(TickSection.Combat);
+        profiler?.Begin(TickSection.Vision);_vision.Update(Entities,Map);profiler?.End(TickSection.Vision);
+        profiler?.Begin(TickSection.Outcome);UpdateOutcome();profiler?.End(TickSection.Outcome);
+        _clock.Advance();
+    }
+    private void UpdateOutcome()
+    {
+        Array.Clear(_buildingCount);
+        for(int i=0;i<Entities.Capacity;i++){if(Entities.IdAt(i)==EntityId.None||!Entities.Type[i].IsBuilding)continue;int p=Entities.Owner[i].Player;if((uint)p<4)_buildingCount[p]++;}
+        bool over=_stats.Over;
+        int newly=_stats.Update(_clock.Tick,_buildingCount,_surrendered);
+        for(int p=0;p<4;p++)if((newly>>p&1)!=0)for(int q=0;q<4;q++)Enqueue(new(_clock.Tick,q,"Defeated",new EntityId(p,0)));
+        if(!over&&_stats.Over)for(int q=0;q<4;q++)Enqueue(new(_clock.Tick,q,"MatchOver",new EntityId(_stats.Winner,0)));
     }
     private bool Accept(Command c)
     {
@@ -121,6 +159,7 @@ public sealed class SimWorld
         if((uint)c.Type>(uint)CommandType.Research || !Entities.IsAlive(c.Entity) || Entities.Owner[c.Entity.Index].Player!=c.Player)return false;
         if(c.Target!=EntityId.None && !_vision.CanSee(Entities,c.Player,c.Target))return false;
         if(_economy.WorkerLocked(c.Entity) && c.Type!=CommandType.Cancel)return false;
+        _stats.CountCommand(c.Player,_clock.Tick);
         if(c.Queued && c.Type!=CommandType.Stop && c.Type!=CommandType.Cancel)return _queues[c.Entity.Index].Enqueue(c);
         _queues[c.Entity.Index].Clear();return Execute(c);
     }
@@ -151,7 +190,12 @@ public sealed class SimWorld
     private void Kill(EntityId id,EntityId source)
     {
         int player=Entities.Owner[id.Index].Player;
-        if(Entities.Destroy(id)){_production.Destroy(id.Index);_economy.Reset(id.Index);_queues[id.Index].Clear();_states[id.Index]=UnitState.Idle;_events.Enqueue(new(_clock.Tick,player,"Death",id));}
+        int killer=Entities.IsAlive(source)?Entities.Owner[source.Index].Player:-1;
+        if(Entities.Destroy(id))
+        {
+            _production.Destroy(id.Index);_economy.Reset(id.Index);_queues[id.Index].Clear();_states[id.Index]=UnitState.Idle;Enqueue(new(_clock.Tick,player,"Death",id));
+            if((uint)player<4)_stats.UnitsLost[player]++;if((uint)killer<4&&killer!=player)_stats.Kills[killer]++;
+        }
     }
     /// <summary>Diagnostic JSON for desync reports. Integers and Q32.32 raw values only; never read by gameplay.</summary>
     public string DumpState()
@@ -194,6 +238,7 @@ public sealed class SimWorld
         }
         _vision.Hash(ref h); _combat.Hash(ref h); _economy.Hash(ref h); _production.Hash(ref h);
         foreach(var ai in _ai)ai.Hash(ref h);
+        _stats.Hash(ref h);
         return h.Value;
     }
 }

@@ -10,7 +10,7 @@ namespace RtsGame.Sim.Systems;
 public readonly record struct PlayerResources(int Ore,int Plasma,int UsedSupply,int MaxSupply);
 internal sealed class EconomySystem
 {
-    internal readonly int[] Ore=new int[4],Plasma=new int[4];
+    internal readonly int[] Ore=new int[4],Plasma=new int[4],OreGathered=new int[4],PlasmaGathered=new int[4];
     internal readonly int[,] Upgrades=new int[4,3];
     private readonly int[] _remaining,_nodeX,_nodeY;
     private readonly bool[] _gas;
@@ -132,7 +132,7 @@ internal sealed class EconomySystem
                 {var distance=(s.Transform[j].Position-s.Transform[i].Position).LengthSquared;if(distance<nearest){nearest=distance;depot=j;}}
                 if(depot<0)continue;
                 if(nearest>Fix64.FromInt(9)){movement.Move(s,id,s.Transform[depot].Position);continue;}
-                Ore[player]+=s.Cargo[i].Ore;Plasma[player]+=s.Cargo[i].Plasma;s.Cargo[i].Ore=0;s.Cargo[i].Plasma=0;_returning[i]=false;
+                Ore[player]+=s.Cargo[i].Ore;Plasma[player]+=s.Cargo[i].Plasma;OreGathered[player]+=s.Cargo[i].Ore;PlasmaGathered[player]+=s.Cargo[i].Plasma;s.Cargo[i].Ore=0;s.Cargo[i].Plasma=0;_returning[i]=false;
             }
             if(_remaining[node]<=0){states[i]=UnitState.Idle;continue;}
             if(_gas[node]&&!HasExtractor(s,player,node)){states[i]=UnitState.Idle;continue;}
@@ -147,7 +147,7 @@ internal sealed class EconomySystem
     }
     internal void Hash(ref WorldHasher h)
     {
-        for(int p=0;p<4;p++){h.AddInt32(Ore[p]);h.AddInt32(Plasma[p]);for(int u=0;u<3;u++)h.AddInt32(Upgrades[p,u]);}
+        for(int p=0;p<4;p++){h.AddInt32(Ore[p]);h.AddInt32(Plasma[p]);h.AddInt32(OreGathered[p]);h.AddInt32(PlasmaGathered[p]);for(int u=0;u<3;u++)h.AddInt32(Upgrades[p,u]);}
         foreach(int value in _remaining)h.AddInt32(value);
         for(int i=0;i<_gatherTimer.Length;i++){h.AddInt32(_gatherTimer[i]);h.AddByte(_returning[i]?(byte)1:(byte)0);h.AddInt32(_constructionLeft[i]);h.AddInt32(_constructionWorker[i].Index);h.AddUInt64(_constructionWorker[i].Generation);h.AddInt32(_constructionOre[i]);h.AddInt32(_constructionPlasma[i]);}
     }

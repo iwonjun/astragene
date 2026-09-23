@@ -16,6 +16,13 @@ public sealed class VisibilityFilter
     public int Capacity=>_store.Capacity;
     internal VisibilityFilter(SimWorld world,EntityStore store,VisionSystem vision,int player){if((uint)player>=4)throw new ArgumentOutOfRangeException(nameof(player));_world=world;_store=store;_vision=vision;Player=player;}
     public bool Surrendered=>_world.Surrendered(Player);
+    // Match outcome and end-of-game statistics are public information for every viewer.
+    public bool MatchOver=>_world.MatchOver;
+    public int Winner=>_world.Winner;
+    public long MatchEndTick=>_world.MatchEndTick;
+    public bool Participant(int player)=>(uint)player<4&&_world.Participant(player);
+    public PlayerStats StatsOf(int player)=>(uint)player<4?_world.Stats(player):default;
+    public int[] ApmOf(int player)=>(uint)player<4?_world.Apm(player):System.Array.Empty<int>();
     public int UpgradeLevel(int kind)=>_world.UpgradeLevel(Player,kind);
     public ProductionOrder ProductionAt(EntityId id,int index)=>TryGet(id,out var e)&&e.Owner.Player==Player?_world.ProductionAt(id,index):new ProductionOrder(-1,0,false);
     public int ConstructionTicks(EntityId id)=>TryGet(id,out var e)&&e.Owner.Player==Player?_world.ConstructionTicks(id):0;

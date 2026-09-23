@@ -49,6 +49,7 @@ internal sealed class AiContext
     internal int Supply => Faction == Faction.Lumina ? 1 : 7;
     internal int Barracks => Faction == Faction.Lumina ? 2 : 8;
     internal int Tech => Faction == Faction.Lumina ? 3 : 9;
+    internal int Tower => Faction == Faction.Lumina ? 4 : 10;
     internal int Extractor => Faction == Faction.Lumina ? 5 : 11;
     internal int Worker => Faction == Faction.Lumina ? 0 : 5;
 

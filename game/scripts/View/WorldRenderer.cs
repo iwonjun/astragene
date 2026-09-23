@@ -14,6 +14,7 @@ public partial class WorldRenderer : Node3D
     private readonly MultiMesh[] _batches=new MultiMesh[12];
     private MultiMesh _health=null!,_rings=null!,_shadows=null!,_resources=null!;
     private VfxPool _vfx=null!;
+    public VfxPool Vfx=>_vfx;
     private readonly int[] _counts=new int[12];
     private Vector3[] _previous=Array.Empty<Vector3>(),_current=Array.Empty<Vector3>();
     private float[] _hp=Array.Empty<float>(),_age=Array.Empty<float>(),_flash=Array.Empty<float>(),_rotation=Array.Empty<float>();
@@ -110,6 +111,7 @@ public partial class WorldRenderer : Node3D
             if(!fresh && !ghost && !e.Type.IsBuilding && e.Combat.Cooldown>_snapshots[i].Combat.Cooldown && _bridge.View.TryGet(e.Combat.Target,out var target))
             {
                 var def=DefDatabase.Units[e.Type.Definition];
+                if(def.ProjectileSpeed>0 && def.SplashRadiusMilli==0)_vfx.Sound(p,1);
                 if(def.ProjectileSpeed==0)_vfx.Emit((p+_bridge.SurfacePosition(target.Transform.Position))/2+Vector3.Up*0.4f,Team(e.Owner.Player),2);
                 else if(def.SplashRadiusMilli>0)_vfx.Emit(_bridge.SurfacePosition(target.Transform.Position)+Vector3.Up*0.1f,Team(e.Owner.Player),3);
             }

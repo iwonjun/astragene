@@ -46,6 +46,8 @@ internal sealed class ProductionManager
         if (!saving && c.BuildingCount[c.Barracks] < wantBarracks) saving |= !TryBuild(c, c.Barracks, economy);
         if (!saving && c.BuildingCount[c.Barracks] > 0 && c.BuildingCount[c.Extractor] == 0 && economy.HomeGeyser(c) >= 0) saving |= !TryBuild(c, c.Extractor, economy);
         if (!saving && c.CompletedCount[c.Barracks] > 0 && workers >= _profile.TechWorkers && c.BuildingCount[c.Tech] == 0) saving |= !TryBuild(c, c.Tech, economy);
+        // Medium/Hard add one defense tower once teched, covering the approach to the base.
+        if (!saving && _profile.FocusFire && c.CompletedCount[c.Tech] > 0 && c.BuildingCount[c.Tower] == 0) saving |= !TryBuild(c, c.Tower, economy);
         if (saving) return;
 
         // 6. Army from every idle-ish production building, weighted by the brain's composition.

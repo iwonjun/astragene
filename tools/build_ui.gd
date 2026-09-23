@@ -25,6 +25,8 @@ func _initialize() -> void:
 [ext_resource type="Script" path="res://game/scripts/UI/Portrait.cs" id="6"]
 [ext_resource type="Script" path="res://game/scripts/UI/PlacementPreview.cs" id="7"]
 [ext_resource type="Script" path="res://game/scripts/UI/Tutorial.cs" id="8"]
+[ext_resource type="Script" path="res://game/scripts/UI/ApmGraph.cs" id="9"]
+[ext_resource type="Script" path="res://game/scripts/UI/Results.cs" id="10"]
 
 [sub_resource type="ShaderMaterial" id="Glass"]
 shader = ExtResource("3")
@@ -89,6 +91,17 @@ mouse_filter = 2')
  button("Next","Root/Tutorial","다음",512,150,120,36)
  button("Close","Root/Tutorial","끝내기",642,150,120,36)
  node("Director","Node","Root/Tutorial",'script = ExtResource("8")')
+ panel("Results",250,110,940,660)
+ node("Accent","ColorRect","Root/Results",rect(0,0,940,4)+'color = Color(0.3,0.9,1,1)\nmouse_filter = 2')
+ label("Title","Root/Results","",30,18,880,56,40)
+ label("Summary","Root/Results","",32,78,880,28,17)
+ node("Table","GridContainer","Root/Results",rect(32,118,876,200)+'columns = 4\ntheme_override_constants/h_separation = 40\ntheme_override_constants/v_separation = 6')
+ label("ApmTitle","Root/Results","분당 명령 수 (APM)",32,330,400,26,16)
+ node("Apm","Control","Root/Results",rect(32,360,876,210)+'script = ExtResource("9")\nmouse_filter = 2')
+ button("Watch","Root/Results","계속 보기",32,592,200,46)
+ button("Replay","Root/Results","리플레이 보기",466,592,210,46)
+ button("Lobby","Root/Results","로비로",690,592,218,46)
+ node("Director","Node","Root/Results",'script = ExtResource("10")')
  panel("Pause",510,215,420,400)
  label("Title","Root/Pause","일시 정지",28,23,360,42,28)
  button("Resume","Root/Pause","계속하기",30,93,360,48)
@@ -103,6 +116,7 @@ mouse_filter = 2')
  var output:=FileAccess.open("res://game/scenes/hud.tscn",FileAccess.WRITE)
  output.store_string(content);output.close()
  build_lobby()
+ build_settings()
  var wave:=AudioStreamWAV.new();wave.format=AudioStreamWAV.FORMAT_16_BITS;wave.mix_rate=22050
  var bytes:=PackedByteArray();bytes.resize(4410*2)
  for i in 4410:bytes.encode_s16(i*2,int(sin(TAU*740*i/22050.0)*5000*(1.0-i/4410.0)))
@@ -111,6 +125,77 @@ mouse_filter = 2')
  if error!=OK:push_error(error_string(error));quit(1);return
  print("Generated HUD, licensed font references and alert placeholder.")
  quit()
+
+func build_settings() -> void:
+ serial=4000
+ content='''[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/scripts/UI/SettingsMenu.cs" id="1"]
+[ext_resource type="Shader" path="res://game/shaders/hologram_ui.gdshader" id="3"]
+[ext_resource type="FontFile" path="res://game/assets/fonts/Pretendard-Regular.otf" id="4"]
+
+[sub_resource type="ShaderMaterial" id="Glass"]
+shader = ExtResource("3")
+[sub_resource type="StyleBoxFlat" id="Button"]
+bg_color = Color(0.045,0.095,0.145,0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15,0.39,0.49,0.75)
+corner_radius_top_left = 5
+corner_radius_bottom_right = 5
+[sub_resource type="StyleBoxFlat" id="Hover"]
+bg_color = Color(0.09,0.25,0.31,1)
+border_width_left = 2
+border_width_bottom = 2
+border_color = Color(0.25,0.85,1,1)
+[sub_resource type="Theme" id="Theme"]
+default_font = ExtResource("4")
+default_font_size = 18
+Button/styles/normal = SubResource("Button")
+Button/styles/hover = SubResource("Hover")
+Button/styles/pressed = SubResource("Hover")
+OptionButton/styles/normal = SubResource("Button")
+OptionButton/styles/hover = SubResource("Hover")
+
+[node name="Settings" type="Control" unique_id=3999]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+'''
+ node("Backdrop","ColorRect",".",'layout_mode = 1\nanchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\ncolor = Color(0.035,0.05,0.085,1)')
+ node("Copy","BackBufferCopy",".",'copy_mode = 2')
+ node("Root","Control",".",'anchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\ntheme = SubResource("Theme")')
+ label("Title","Root","설정",80,40,700,64,44)
+ panel("Display",80,120,620,330)
+ label("Head","Root/Display","화면",24,14,560,30,20)
+ label("ResolutionLabel","Root/Display","해상도",24,62,200,40)
+ node("Resolution","OptionButton","Root/Display",rect(250,58,346,44)+'focus_mode = 0')
+ label("QualityLabel","Root/Display","그래픽 품질",24,122,200,40)
+ node("Quality","OptionButton","Root/Display",rect(250,118,346,44)+'focus_mode = 0')
+ node("Fullscreen","CheckButton","Root/Display",rect(24,178,572,44)+'text = "전체 화면"\nfocus_mode = 0')
+ label("ScrollLabel","Root/Display","카메라 스크롤 속도",24,240,220,40)
+ node("Scroll","HSlider","Root/Display",rect(250,250,346,24)+'min_value = 0.4\nmax_value = 2.5\nstep = 0.1\nvalue = 1.0')
+ node("EdgeScroll","CheckButton","Root/Display",rect(24,280,572,40)+'text = "화면 가장자리 스크롤"\nfocus_mode = 0')
+ panel("Sound",740,120,620,330)
+ label("Head","Root/Sound","소리",24,14,560,30,20)
+ var buses := ["Master","Music","SFX","Voice","UI"]
+ var names := ["전체","배경음악","효과음","음성","인터페이스"]
+ for i in 5:
+  label(buses[i]+"Label","Root/Sound",names[i],24,62+i*52,200,40)
+  node(buses[i],"HSlider","Root/Sound",rect(250,72+i*52,346,24)+'max_value = 1.0\nstep = 0.05\nvalue = 1.0')
+ panel("Keys",80,470,1280,300)
+ label("Head","Root/Keys","명령 카드 단축키 · 칸을 누르고 새 키 입력 (WASD 제외)",24,14,1200,30,20)
+ for i in 12:button("Key%d" % i,"Root/Keys","",24+(i%6)*206,62+(i/6)*80,196,64)
+ button("Reset","Root/Keys","기본값",24,222,300,50)
+ button("Back","Root","취소",960,790,190,52)
+ button("Save","Root","저장",1170,790,190,52)
+ label("Status","Root","",80,800,860,40,16)
+ var output:=FileAccess.open("res://game/scenes/settings.tscn",FileAccess.WRITE)
+ output.store_string(content);output.close()
 
 func build_lobby() -> void:
  serial=3000

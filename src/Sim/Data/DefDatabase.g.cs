@@ -60,6 +60,9 @@ public static class DefDatabase
         new RuleDef(8, "RepairPerSecond", 8),
         new RuleDef(9, "RegenPerSecond", 2),
         new RuleDef(10, "WorkerRadiusMilli", 250),
+        new RuleDef(11, "TowerDamage", 14),
+        new RuleDef(12, "TowerRange", 7),
+        new RuleDef(13, "TowerCooldownTicks", 20),
     };
     public static ReadOnlySpan<RuleDef> Rules => RuleData;
 }

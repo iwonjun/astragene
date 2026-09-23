@@ -49,6 +49,7 @@ jobs:
             }
           }
           Invoke-GodotChecked @('--headless', '--script', 'res://tools/gen_meshes.gd')
+          Invoke-GodotChecked @('--headless', '--script', 'res://tools/gen_audio.gd')
           Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_ui.gd')
           Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_scenes.gd')
           git diff --exit-code -- game/scenes
@@ -56,6 +57,6 @@ jobs:
           Invoke-GodotChecked @('--headless', '--editor', '--import')
           Invoke-GodotChecked @('--headless', '--quit-after', '3')
           Invoke-GodotChecked @('--headless', '-s', 'addons/gdUnit4/bin/GdUnitCmdTool.gd', '--ignoreHeadlessMode', '-a', 'test/')
-          foreach ($name in @('boot','lobby','match','replay')) {
+          foreach ($name in @('boot','lobby','match','replay','settings')) {
             Invoke-GodotChecked @('--headless', "res://game/scenes/$name.tscn", '--quit-after', '3')
           }

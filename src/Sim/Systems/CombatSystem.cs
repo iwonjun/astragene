@@ -31,7 +31,8 @@ internal sealed class CombatSystem
     {
         for(int i=0;i<s.Capacity;i++)
         {
-            EntityId id=s.IdAt(i);if(id==EntityId.None || s.Type[i].IsBuilding || s.Owner[i].Player<0)continue;
+            EntityId id=s.IdAt(i);if(id==EntityId.None || s.Owner[i].Player<0)continue;
+            if(s.Type[i].IsBuilding){if(s.Type[i].Definition is 4 or 10 && economy.ConstructionLeft(i)==0)Tower(s,map,i,economy,vision,kill);continue;}
             UnitDef definition=DefDatabase.Units[s.Type[i].Definition];
             ref CombatComponent combat=ref s.Combat[i];
             if(combat.Cooldown>0)combat.Cooldown--;
@@ -79,16 +80,44 @@ internal sealed class CombatSystem
             else {shot.Position+=delta/distance*step;if(--shot.Life<=0)shot.Active=false;}
         }
     }
+    // Defense towers (Sentinel/Thorn): stationary instant-hit attackers using balance/rules.csv values.
+    private static UnitDef? _tower;
+    private static UnitDef TowerDef=>_tower??=new UnitDef(-1,"Tower",Faction.Lumina,1,0,EconomySystem.Rule(11),EconomySystem.Rule(12),0,0,0,0,0,EconomySystem.Rule(12),AttackType.Normal,ArmorType.Heavy,false,false,EconomySystem.Rule(13),0,-1,-1,0,0,false,1);
+    private static void Tower(EntityStore s,MapData map,int i,EconomySystem economy,VisionSystem vision,Action<EntityId,EntityId> kill)
+    {
+        var d=TowerDef;ref CombatComponent combat=ref s.Combat[i];
+        if(combat.Cooldown>0)combat.Cooldown--;
+        Fix64 range=Fix64.FromInt(d.Range);var center=s.Transform[i].Position+new Fix2(Fix64.One,Fix64.One); // 2x2 footprint centre
+        bool valid=Enemy(s,vision,i,combat.Target)&&(s.Transform[combat.Target.Index].Position-center).LengthSquared<=range*range;
+        if(!valid)
+        {
+            combat.Target=EntityId.None;Fix64 best=range*range;
+            for(int e=0;e<s.Capacity;e++)
+            {
+                var id=s.IdAt(e);if(id==EntityId.None||s.Type[e].IsBuilding)continue;
+                var offset=s.Transform[e].Position-center;if(offset.X>range||-offset.X>range||offset.Y>range||-offset.Y>range)continue;
+                if(!Enemy(s,vision,i,id))continue;
+                var distance=offset.LengthSquared;if(distance<=best){best=distance;combat.Target=id;}
+            }
+        }
+        if(combat.Target==EntityId.None||combat.Cooldown>0)return;
+        Apply(s,map,combat.Target.Index,s.IdAt(i),d,Height(map,s.Transform[i].Position),s.Owner[i].Player,economy,kill,100);
+        combat.Cooldown=d.CooldownTicks;
+    }
     private static bool Enemy(EntityStore s,VisionSystem vision,int source,EntityId target)=>s.IsAlive(target)&&vision.CanSee(s,s.Owner[source].Player,target)&&s.Owner[target.Index].Player!=s.Owner[source].Player;
     private static EntityId Acquire(EntityStore s,VisionSystem vision,int source,int sight,EntityId attacker)
     {
         Fix64 limit=Fix64.FromInt(sight*sight);
         if(Enemy(s,vision,source,attacker)&&(s.Transform[attacker.Index].Position-s.Transform[source].Position).LengthSquared<=limit)return attacker;
         EntityId result=EntityId.None;
+        var origin=s.Transform[source].Position;Fix64 reach=Fix64.FromInt(sight);
         for(int i=0;i<s.Capacity;i++)
         {
-            var id=s.IdAt(i);if(!Enemy(s,vision,source,id))continue;
-            Fix64 distance=(s.Transform[i].Position-s.Transform[source].Position).LengthSquared;
+            var id=s.IdAt(i);if(id==EntityId.None)continue;
+            var offset=s.Transform[i].Position-origin;
+            if(offset.X>reach||-offset.X>reach||offset.Y>reach||-offset.Y>reach)continue; // outside the sight square
+            if(!Enemy(s,vision,source,id))continue;
+            Fix64 distance=offset.LengthSquared;
             if(distance<limit){limit=distance;result=id;}
         }
         return result;
@@ -97,23 +126,26 @@ internal sealed class CombatSystem
     private static void Hit(EntityStore s,MapData map,EntityId source,EntityId target,Fix2 center,UnitDef d,int sourceHeight,int sourceOwner,EconomySystem economy,Action<EntityId,EntityId> kill)
     {
         Fix64 radius=Fix64.FromRatio(d.SplashRadiusMilli,1000);
+        // Profiling pass: single-target hits touch only their target instead of scanning every entity.
+        if(radius==Fix64.Zero){if(s.IsAlive(target))Apply(s,map,target.Index,source,d,sourceHeight,sourceOwner,economy,kill,100);return;}
         for(int i=0;i<s.Capacity;i++)
         {
             var id=s.IdAt(i);if(id==EntityId.None)continue;
-            int scale=100;
-            if(radius==Fix64.Zero){if(id!=target)continue;}
-            else
-            {
-                Fix64 distance=(s.Transform[i].Position-center).Length;
-                if(distance>radius)continue;
-                scale=distance<=radius/Fix64.FromInt(3)?100:distance<=radius*Fix64.FromRatio(2,3)?50:25;
-            }
-            var type=s.Type[i];int armor=type.IsBuilding?DefDatabase.Buildings[type.Definition].Armor:DefDatabase.Units[type.Definition].Armor;
-            ArmorType defense=type.IsBuilding?ArmorType.Heavy:DefDatabase.Units[type.Definition].Defense;
-            s.Health[i].Current-=Damage(d.Damage+economy.UpgradeAmount(sourceOwner,0),d.Attack,defense,armor+economy.UpgradeAmount(s.Owner[i].Player,1),sourceHeight<Height(map,s.Transform[i].Position),scale);
-            s.Combat[i].LastAttacker=source;
-            if(s.Health[i].Current<=Fix64.Zero)kill(id,source);
+            var offset=s.Transform[i].Position-center;
+            if(offset.X>radius||-offset.X>radius||offset.Y>radius||-offset.Y>radius)continue; // cheap reject before the square root
+            Fix64 distance=offset.Length;
+            if(distance>radius)continue;
+            int scale=distance<=radius/Fix64.FromInt(3)?100:distance<=radius*Fix64.FromRatio(2,3)?50:25;
+            Apply(s,map,i,source,d,sourceHeight,sourceOwner,economy,kill,scale);
         }
+    }
+    private static void Apply(EntityStore s,MapData map,int i,EntityId source,UnitDef d,int sourceHeight,int sourceOwner,EconomySystem economy,Action<EntityId,EntityId> kill,int scale)
+    {
+        var id=s.IdAt(i);var type=s.Type[i];int armor=type.IsBuilding?DefDatabase.Buildings[type.Definition].Armor:DefDatabase.Units[type.Definition].Armor;
+        ArmorType defense=type.IsBuilding?ArmorType.Heavy:DefDatabase.Units[type.Definition].Defense;
+        s.Health[i].Current-=Damage(d.Damage+economy.UpgradeAmount(sourceOwner,0),d.Attack,defense,armor+economy.UpgradeAmount(s.Owner[i].Player,1),sourceHeight<Height(map,s.Transform[i].Position),scale);
+        s.Combat[i].LastAttacker=source;
+        if(s.Health[i].Current<=Fix64.Zero)kill(id,source);
     }
     internal void Hash(ref WorldHasher h)
     {

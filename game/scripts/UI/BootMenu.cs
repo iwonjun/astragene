@@ -6,6 +6,7 @@ public partial class BootMenu : Node
     // Benchmarks and captures keep launching straight into a match; players land in the lobby.
     public override void _Ready()
     {
+        GameSettings.Apply(GetViewport());
         if(int.TryParse(MatchLaunch.Arg("ai"),out int ai))MatchLaunch.AiDifficulty=ai; // --local --ai=0..2
         if(MatchLaunch.Flag("tutorial"))MatchLaunch.Tutorial=true; // --tutorial
         bool direct=MatchLaunch.Tutorial||MatchLaunch.Flag("render-benchmark")||MatchLaunch.Flag("art-capture")||MatchLaunch.Flag("local");

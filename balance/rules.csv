@@ -10,3 +10,6 @@ id,name,value
 8,RepairPerSecond,8
 9,RegenPerSecond,2
 10,WorkerRadiusMilli,250
+11,TowerDamage,14
+12,TowerRange,7
+13,TowerCooldownTicks,20

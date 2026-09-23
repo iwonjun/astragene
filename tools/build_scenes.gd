@@ -32,6 +32,8 @@ func _initialize() -> void:
             content+='\n[node name="HUD" parent="." unique_id=1008 instance=ExtResource("7")]\n'
             content=content.replace('[node name="Match"','[ext_resource type="Script" path="res://game/scripts/Net/LockstepRunner.cs" id="8"]\n\n[node name="Match"')
             content+='\n[node name="Net" type="Node" parent="." unique_id=1009]\nscript = ExtResource("8")\n'
+            content=content.replace('[node name="Match"','[ext_resource type="Script" path="res://game/scripts/View/AudioDirector.cs" id="9"]\n\n[node name="Match"')
+            content+='\n[node name="Audio" type="Node" parent="." unique_id=1010]\nscript = ExtResource("9")\n'
         if scene_name == "lobby":
             content=content.replace('[node name="Lobby" type="Node"','[ext_resource type="PackedScene" path="res://game/scenes/lobby_ui.tscn" id="1"]\n\n[node name="Lobby" type="Node"')
             content+='\n[node name="UI" parent="." unique_id=1101 instance=ExtResource("1")]\n'

@@ -51,4 +51,14 @@ public sealed class CombatTests
         Assert.True(world.Entities.Get(target).Health.Current<Fix64.FromInt(118));
         Assert.True(world.Entities.Get(ally).Health.Current<Fix64.FromInt(68));
     }
+    [Fact]
+    public void CompletedDefenseTowersShootEnemiesInRangeOnly()
+    {
+        // Sentinel at (20,20); an enemy Trooper inside 7 tiles, another far away.
+        var world=new SimWorld(Map(),new[]{new SpawnSpec(0,4,true,Pos(20,20)),new SpawnSpec(1,1,false,Pos(25,21)),new SpawnSpec(1,1,false,Pos(40,40))},capacity:16);
+        var near=world.Entities.IdAt(1);var far=world.Entities.IdAt(2);
+        for(int i=0;i<60;i++)world.Tick(new[]{new Command(CommandType.Hold,1,near,EntityId.None,Fix2.Zero),new Command(CommandType.Hold,1,far,EntityId.None,Fix2.Zero)});
+        Assert.True(!world.Entities.IsAlive(near)||world.Entities.Get(near).Health.Current<Fix64.FromInt(104));
+        Assert.Equal(Fix64.FromInt(104),world.Entities.Get(far).Health.Current);
+    }
 }

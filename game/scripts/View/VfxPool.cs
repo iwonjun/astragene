@@ -14,7 +14,10 @@ public partial class VfxPool : Node3D
         _mesh=new MultiMesh {TransformFormat=MultiMesh.TransformFormatEnum.Transform3D,UseCustomData=true,Mesh=GD.Load<Mesh>("res://game/assets/generated/slash.mesh"),InstanceCount=Capacity,VisibleInstanceCount=0,CustomAabb=new Aabb(Vector3.Zero,new Vector3(128,20,128))};
         AddChild(new MultiMeshInstance3D {Multimesh=_mesh,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off});
     }
-    public void Emit(Vector3 at,Color color,int kind=0){_kind[_next]=kind;_positions[_next]=at;_colors[_next]=color;_life[_next]=0.3f;_next=(_next+1)%Capacity;}
+    /// <summary>Audio hook: 0 hit, 1 ranged shot, 2 melee strike, 3 explosion.</summary>
+    public event System.Action<Vector3,int>? Emitted;
+    public void Sound(Vector3 at,int kind)=>Emitted?.Invoke(at,kind);
+    public void Emit(Vector3 at,Color color,int kind=0){Emitted?.Invoke(at,kind);_kind[_next]=kind;_positions[_next]=at;_colors[_next]=color;_life[_next]=0.3f;_next=(_next+1)%Capacity;}
     public override void _Process(double delta)
     {
         int count=0;

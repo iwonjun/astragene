@@ -6,9 +6,11 @@ public partial class RtsCamera : Camera3D
     public float Altitude=30;
     public float ScrollSpeed=24;
     public bool ControlsEnabled=true;
+    public bool EdgeScroll=true;
     public override void _Ready()
     {
         RotationDegrees=new Vector3(-50,0,0);Current=true;Fov=45;Far=250;
+        RtsGame.UI.GameSettings.EnsureLoaded();ScrollSpeed=24*RtsGame.UI.GameSettings.ScrollSpeed;EdgeScroll=RtsGame.UI.GameSettings.EdgeScroll;
         GetNode<SelectionController>("../Selection").CameraJumpRequested+=Jump;
         UpdatePose();
     }
@@ -19,7 +21,7 @@ public partial class RtsCamera : Camera3D
         if(!ControlsEnabled)return;
         Vector2 direction=Input.GetVector("camera_left","camera_right","camera_up","camera_down");
         var mouse=GetViewport().GetMousePosition();var size=GetViewport().GetVisibleRect().Size;
-        if(DisplayServer.WindowIsFocused() && mouse.X>=0 && mouse.Y>=0 && mouse.X<size.X && mouse.Y<size.Y){if(mouse.X<8)direction.X-=1;if(mouse.X>size.X-8)direction.X+=1;if(mouse.Y<8)direction.Y-=1;if(mouse.Y>size.Y-8)direction.Y+=1;}
+        if(EdgeScroll && DisplayServer.WindowIsFocused() && mouse.X>=0 && mouse.Y>=0 && mouse.X<size.X && mouse.Y<size.Y){if(mouse.X<8)direction.X-=1;if(mouse.X>size.X-8)direction.X+=1;if(mouse.Y<8)direction.Y-=1;if(mouse.Y>size.Y-8)direction.Y+=1;}
         Jump(Focus+new Vector3(direction.X,0,direction.Y)*ScrollSpeed*(float)delta);
     }
     public override void _UnhandledInput(InputEvent input)

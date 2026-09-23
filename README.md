@@ -1,6 +1,6 @@
 # 으후-브우부
 
-Godot 4.6 .NET / C# .NET 8 기반 자체 IP RTS. 로컬 AI 대전, 직접 IP 락스텝 멀티플레이, 리플레이까지 플레이할 수 있습니다(Phase 0~12 완료).
+Godot 4.6 .NET / C# .NET 8 기반 자체 IP RTS. 로컬 AI 대전, 직접 IP 락스텝 멀티플레이, 리플레이까지 플레이할 수 있습니다(Phase 0~13 완료).
 규약 원문은 AGENTS.md, 로드맵과 검증 기록은 PLAN.md에 있습니다.
 
 ## SETUP
@@ -147,3 +147,15 @@ Sim/전투/경제/시야와 절차 생성 3D 화면이 연결되었습니다. �
 - 로비의 "AI와 대전"과 난이도(쉬움/보통/어려움). AI는 Sim 안에서 돌아 멀티플레이·리플레이에서도 결정론이 유지됩니다.
 - 구조: StrategyBrain(정찰 기억·위협·공격 시점·편성) → Economy/Production/ArmyManager → 점사·후퇴 마이크로.
 - AI는 자기 VisibilityFilter로만 관찰하고 일반 Command만 제출합니다. 자원·시야 치트는 없습니다.
+
+## 폴리싱 (Phase 13)
+- 승패: 모든 건물을 잃거나 항복/탈퇴하면 패배, 마지막 남은 플레이어가 승리. 결과 화면에 채집량·생산량·처치/손실·분당 명령(APM) 그래프, "리플레이 보기".
+- 오디오: Master/Music/SFX/Voice/UI 버스(`default_bus_layout.tres`). 진영별 선택·명령 응답 보이스, 전투 SFX, BGM 슬롯은 `tools/gen_audio.gd`가 합성한 플레이스홀더이며 같은 파일명으로 교체할 수 있습니다.
+- 설정(로비 → 설정): 해상도, 전체 화면, 그래픽 품질, 볼륨 5종, 카메라 스크롤 속도/가장자리 스크롤, 명령 카드 단축키. `user://settings.json`.
+- 방어탑 Sentinel/Thorn은 사거리 안의 적 유닛을 공격합니다(수치는 balance/rules.csv).
+- 성능: 유닛 400 + 건물 100에서 틱 평균 0.95ms. docs/phase13-profile.md.
+
+## 배포 빌드
+1. Godot 4.6.3 **.NET** export 템플릿 설치: `에디터 열기.cmd` → 편집기 → 내보내기 템플릿 관리 → 다운로드 및 설치.
+2. `./tools/build_release.ps1` (또는 `-Platform windows|linux|macos`). 결과는 `builds/`(Git 제외).
+- macOS 빌드는 서명·공증을 하지 않습니다(`codesign/codesign=0`). 배포하려면 Apple 개발자 서명이 필요합니다.

@@ -322,3 +322,21 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 - 난이도 차이는 판단 주기(40/20/10틱), 위협 반응 지연, 목표 일꾼·병영 수, 점사/후퇴/정찰/역상성, 업그레이드 단계뿐이며 자원·시야 보정은 없다.
 - 알려진 한계: 확장 기지를 짓지 않는다. 방어탑은 현재 전투 시스템이 건물 공격을 지원하지 않아 AI도 짓지 않는다(Phase 13 후보).
 
+
+## Phase 13 — 진행 중
+### 변경 파일과 이유
+- src/Sim/World/SimWorld.cs, MatchStats.cs, VisibilityFilter.cs: 승패 판정(전 건물 파괴/항복/탈퇴), 채집·생산·손실·처치·분당 명령(APM) 통계, 경기 종료 후 공개 조회. 해시 포함.
+- src/Sim/World/TickProfiler.cs: 시스템별 계측 훅(Sim은 시간을 읽지 않고 구간 표시만). tests/Sim.Tests/ProfileTests.cs: 500 엔티티 장기 계측, 상위 5개 시스템 기록과 틱 예산 검증 → docs/phase13-profile.md.
+- tools/gen_audio.gd, game/assets/generated/audio/*, default_bus_layout.tres: 보이스/전투 SFX/BGM 플레이스홀더와 Master/Music/SFX/Voice/UI 버스 코드 생성. game/scripts/View/AudioDirector.cs: 선택·명령 응답, 전투음, BGM 슬롯.
+- tools/build_ui.gd, game/scripts/UI/{Results,ApmGraph,SettingsMenu,GameSettings}.cs: 결과 화면(채집량/생산량/APM 그래프), 설정(해상도/전체화면/품질/볼륨/스크롤 속도/단축키) 저장·적용.
+- export_presets.cfg, tools/build_release.ps1: Windows/Linux/macOS 내보내기 프리셋과 빌드 스크립트.
+### 완료 조건
+- [x] 승패가 결정론적으로 판정되고 결과 화면에 통계·APM 그래프가 표시된다(docs/phase13-results.png).
+- [x] 상위 5개 시스템 계측 후 최적화, 유닛 400 + 건물 100에서 틱 평균 0.95ms(docs/phase13-profile.md).
+- [x] 오디오 버스/보이스/SFX/BGM, 설정 저장·적용, 3개 플랫폼 프리셋과 빌드 스크립트.
+
+### Phase 13 완료
+- Sim 62/62, GdUnit 10/10, 1분 두 프로세스 soak desync 0·리플레이 일치.
+- 추가: 방어탑(Sentinel/Thorn) 공격 구현(balance/rules.csv의 TowerDamage/Range/Cooldown), 보통·어려움 AI가 1개 건설.
+- 배포: export_presets.cfg 3종은 Godot가 인식하며 누락 항목은 export 템플릿뿐이다. 템플릿(4.6.3 .NET) 설치 후 `./tools/build_release.ps1`로 빌드한다. 이 PC에는 템플릿이 없어 실제 실행 파일은 아직 만들지 않았다.
+- 오디오는 코드로 합성한 플레이스홀더다(외부 샘플 없음). 실제 보이스/음악은 같은 파일명으로 교체하면 된다.

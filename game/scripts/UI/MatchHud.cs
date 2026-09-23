@@ -32,6 +32,7 @@ public partial class MatchHud : CanvasLayer
     private bool _teamChat,_surrendered;
     private float _refresh,_noticeTime,_shownOre=450,_shownPlasma;
     private readonly List<string> _messages=new();
+    private readonly Queue<RtsGame.Sim.World.SimEvent> _events=new();
     private readonly Dictionary<EntityId,long> _buildingHealth=new();
     private ulong _lastAttackAlert;
     private AudioStreamPlayer _alertSound=null!;
@@ -50,6 +51,7 @@ public partial class MatchHud : CanvasLayer
         _pause.GetNode<Button>("Keys").Pressed+=()=>{_keyEditor.Show();RefreshKeys();};_keyEditor.GetNode<Button>("Save").Pressed+=()=>{_keys.Save();_keyEditor.Hide();_editingKey=-1;RefreshCards();};
         _pause.GetNode<Button>("Surrender").Pressed+=()=>{_bridge.IsPaused=false;_pause.Hide();_bridge.Issue(new Command(CommandType.Surrender,_bridge.LocalPlayer,EntityId.None,EntityId.None,Fix2.Zero));};
         _chat.TextSubmitted+=text=>{if(!string.IsNullOrWhiteSpace(text)){ReceiveChat(_bridge.LocalPlayer,text,_teamChat);ChatRequested?.Invoke(text,_teamChat);}_chat.Clear();_chat.Hide();_chat.ReleaseFocus();};
+        _bridge.SimEventRaised+=e=>{if(_events.Count<256)_events.Enqueue(e);};
         _pause.GetNode<Button>("Quit").Pressed+=()=>{_bridge.IsPaused=false;GetTree().ChangeSceneToFile("res://game/scenes/lobby.tscn");};
         if(GetNodeOrNull<LockstepRunner>("../Net") is LockstepRunner runner){ChatRequested+=runner.SendChat;runner.ChatReceived+=ReceiveChat;}
         _alertSound=new AudioStreamPlayer{Stream=GD.Load<AudioStream>("res://game/assets/generated/alert.tres"),VolumeDb=-16};AddChild(_alertSound);
@@ -92,7 +94,7 @@ public partial class MatchHud : CanvasLayer
             if(selected.Count==0)_stats.Text="드래그 선택 · 우클릭 명령\n일꾼으로 자원을 우클릭해 채집하세요.";
         }
         RefreshCards();
-        while(_bridge.View.TryDequeueEvent(out var ev))
+        while(_events.TryDequeue(out var ev))
         {
             if(ev.Kind=="PlayerLeft")Notify($"P{ev.Entity.Index+1} 플레이어가 나갔습니다. 해당 유닛은 중립화됩니다.");
             if(ev.Kind=="Rejected")Notify("명령을 실행할 수 없습니다. 자원·보급·선행 건물을 확인하세요.");
@@ -104,7 +106,8 @@ public partial class MatchHud : CanvasLayer
             if(_buildingHealth.TryGetValue(id,out long hp)&&e.Health.Current.Raw<hp&&Time.GetTicksMsec()-_lastAttackAlert>2500){_lastAttackAlert=Time.GetTicksMsec();Notify("기지가 공격받고 있습니다!  Space: 이동");_minimap.AlertPosition=_bridge.SurfacePosition(e.Transform.Position);_minimap.AlertUntil=Time.GetTicksMsec()+4500;_lastEvent=_minimap.AlertPosition;}
             _buildingHealth[id]=e.Health.Current.Raw;
         }
-        if(_bridge.View.Surrendered&&!_surrendered){_surrendered=true;_bridge.IsPaused=true;_pause.Show();_pause.GetNode<Label>("Title").Text="항복했습니다";_pause.GetNode<Button>("Surrender").Disabled=true;_pause.GetNode<Button>("Resume").Disabled=true;}
+        // Surrender ends in the results screen (Results.cs); the menu only locks the button.
+        if(_bridge.View.Surrendered&&!_surrendered){_surrendered=true;_pause.GetNode<Button>("Surrender").Disabled=true;}
     }
     public int MenuLevel=>_menu;
     public string KeyName(int slot)=>_keys[slot].ToString();
@@ -192,8 +195,7 @@ public partial class MatchHud : CanvasLayer
     private void CancelQueue(int index){if(_selection.Selected.Count>0)_bridge.Issue(new Command(CommandType.Cancel,_bridge.LocalPlayer,_selection.Selected[0],EntityId.None,Fix2.Zero,index));}
     public void Notify(string text,bool sound=true){_notice.Text=text;_noticeTime=3.5f;_notice.Modulate=Colors.White;if(sound)_alertSound.Play();}
     private void TogglePause()
-    {
-        if(_surrendered)return;_pause.Visible=!_pause.Visible;_target=null;
+    {_pause.Visible=!_pause.Visible;_target=null;
         // Lockstep peers cannot pause one client alone; the menu opens while the match continues.
         if(_bridge.Mode==MatchMode.Network){_pause.GetNode<Label>("Status").Text="멀티플레이 경기는 메뉴가 열려 있어도 계속 진행됩니다.";return;}
         _bridge.IsPaused=_pause.Visible;

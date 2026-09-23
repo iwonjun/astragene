@@ -22,7 +22,16 @@ public partial class MatchBridge : Node
     public LockstepRunner? Runner {get;private set;}
     /// <summary>Local matches record every tick, so they can be replayed exactly like network matches.</summary>
     public ReplayLog? LocalReplay {get;private set;}
-    public override void _Ready()=>ResetMatch();
+    public override void _Ready(){ResetMatch();RtsGame.UI.GameSettings.ApplyMatch(GetParent());}
+    /// <summary>Every local-player Sim event, fanned out once per frame to HUD, audio and results.</summary>
+    public event Action<SimEvent>? SimEventRaised;
+    /// <summary>Raised for each command the local player issues (voice acknowledgements).</summary>
+    public event Action<Command>? CommandIssued;
+    public override void _Process(double delta)
+    {
+        if(World==null)return;
+        while(View.TryDequeueEvent(out var e))SimEventRaised?.Invoke(e);
+    }
     public void ResetMatch()
     {
         var map=MapLoader.Load(FileAccess.GetFileAsBytes(MatchLaunch.MapPath));
@@ -57,6 +66,7 @@ public partial class MatchBridge : Node
     public void Issue(Command command)
     {
         if(Mode==MatchMode.Replay)return;
+        CommandIssued?.Invoke(command);
         if(Mode==MatchMode.Network){Runner?.QueueLocal(command);return;}
         _pending.Add(command);
     }
