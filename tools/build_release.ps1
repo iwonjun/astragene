@@ -1,4 +1,4 @@
-# Release builds for Windows / Linux / macOS from export_presets.cfg.
+﻿# Release builds for Windows / Linux / macOS from export_presets.cfg.
 #   ./tools/build_release.ps1            (all platforms)
 #   ./tools/build_release.ps1 -Platform windows
 # Requires Godot 4.6.3 .NET export templates (see README "배포 빌드").
@@ -22,9 +22,13 @@ foreach ($key in $presets.Keys) {
     $name, $path = $presets[$key]
     New-Item -ItemType Directory -Force (Split-Path $path -Parent) | Out-Null
     Write-Host "Exporting $name -> $path"
-    $log = godot --headless --export-release $name $path 2>&1
-    $log | Select-String -Pattern 'ERROR|error' | ForEach-Object { Write-Host $_ }
-    if ($LASTEXITCODE -ne 0 -or !(Test-Path $path)) { throw "Export failed: $name" }
+    # Godot writes warnings to stderr; keep them as log lines instead of terminating errors (PowerShell 5.1).
+    $ErrorActionPreference = 'Continue'
+    $log = godot --headless --export-release $name $path 2>&1 | ForEach-Object { "$_" }
+    $exit = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    $log | Select-String -Pattern 'ERROR' | ForEach-Object { Write-Host $_ }
+    if ($exit -ne 0 -or !(Test-Path $path)) { throw "Export failed: $name" }
     if ($key -ne 'macos') { Compress-Archive -Force -Path (Join-Path (Split-Path $path -Parent) '*') -DestinationPath "builds/Astragene-$key.zip" }
 }
 Write-Host 'Release builds are in builds/.'

@@ -338,5 +338,5 @@ Phase 1에서 Fix64/Fix2/FixMath, DetRandom, SimClock, WorldHasher를 구현하�
 ### Phase 13 완료
 - Sim 62/62, GdUnit 10/10, 1분 두 프로세스 soak desync 0·리플레이 일치.
 - 추가: 방어탑(Sentinel/Thorn) 공격 구현(balance/rules.csv의 TowerDamage/Range/Cooldown), 보통·어려움 AI가 1개 건설.
-- 배포: export_presets.cfg 3종은 Godot가 인식하며 누락 항목은 export 템플릿뿐이다. 템플릿(4.6.3 .NET) 설치 후 `./tools/build_release.ps1`로 빌드한다. 이 PC에는 템플릿이 없어 실제 실행 파일은 아직 만들지 않았다.
+- 배포: export_presets.cfg 3종은 Godot가 인식하며 누락 항목은 export 템플릿뿐이다. Windows 템플릿(4.6.3 .NET, 공식 GitHub 릴리스)을 설치하고 `./tools/build_release.ps1 -Platform windows`로 builds/Astragene-windows.zip(73MB)을 생성, 내보낸 exe 실행과 화면 캡처로 동작을 확인했다. Linux/macOS는 템플릿 미설치로 빌드하지 않았다.
 - 오디오는 코드로 합성한 플레이스홀더다(외부 샘플 없음). 실제 보이스/음악은 같은 파일명으로 교체하면 된다.
