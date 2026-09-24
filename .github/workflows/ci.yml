@@ -9,14 +9,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Godot 4.6.3 (standard)
         run: |
-          curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip
-          unzip -q godot.zip
-          echo "GODOT=$PWD/Godot_v4.6.3-stable_linux.x86_64" >> $GITHUB_ENV
+          curl -sSL -o "$RUNNER_TEMP/godot.zip" https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP"
+          echo "GODOT=$RUNNER_TEMP/Godot_v4.6.3-stable_linux.x86_64" >> $GITHUB_ENV
       - name: Install GdUnit4 6.2.1
         run: |
-          curl -sSL -o gdunit.zip https://github.com/godot-gdunit-labs/gdUnit4/archive/refs/tags/v6.2.1.zip
-          unzip -q gdunit.zip
-          mkdir -p addons && cp -r gdUnit4-6.2.1/addons/gdUnit4 addons/
+          curl -sSL -o "$RUNNER_TEMP/gdunit.zip" https://github.com/godot-gdunit-labs/gdUnit4/archive/refs/tags/v6.2.1.zip
+          unzip -q "$RUNNER_TEMP/gdunit.zip" -d "$RUNNER_TEMP"
+          mkdir -p addons && cp -r "$RUNNER_TEMP/gdUnit4-6.2.1/addons/gdUnit4" addons/
       - name: Import
         run: $GODOT --headless --import || true
       - name: Unit, determinism and network tests
