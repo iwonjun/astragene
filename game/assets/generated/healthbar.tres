@@ -1,7 +1,0 @@
-[gd_resource type="ShaderMaterial" format=3]
-
-[ext_resource type="Shader" path="res://game/shaders/healthbar.gdshader" id="1_ls7lh"]
-
-[resource]
-render_priority = 0
-shader = ExtResource("1_ls7lh")

@@ -1,5 +1,6 @@
-# Normalize EOL for all files that Git considers text files.
-* text=auto eol=lf
-AGENTS.md -text -whitespace
+* text=auto
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+*.png binary
+*.otf binary
+*.ttf binary

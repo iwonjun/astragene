@@ -1,0 +1,526 @@
+{
+ "_note": "All numbers are integers. *_permille = x/1000. Values are playtest starting points (AGENTS.md R6).",
+ "tick_rate": 10,
+ "map": {
+  "width": 400,
+  "height": 240,
+  "land_permille": 470
+ },
+ "terrain": [
+  {
+   "id": 0,
+   "key": "ocean",
+   "name_ko": "바다",
+   "cost": 0,
+   "defense_permille": 1000,
+   "passable": false,
+   "color": "#16324f"
+  },
+  {
+   "id": 1,
+   "key": "plains",
+   "name_ko": "평원",
+   "cost": 16,
+   "defense_permille": 1000,
+   "passable": true,
+   "color": "#8fae6a"
+  },
+  {
+   "id": 2,
+   "key": "forest",
+   "name_ko": "숲",
+   "cost": 24,
+   "defense_permille": 1150,
+   "passable": true,
+   "color": "#4f7a4a"
+  },
+  {
+   "id": 3,
+   "key": "hills",
+   "name_ko": "언덕",
+   "cost": 32,
+   "defense_permille": 1300,
+   "passable": true,
+   "color": "#a49365"
+  },
+  {
+   "id": 4,
+   "key": "mountain",
+   "name_ko": "산",
+   "cost": 48,
+   "defense_permille": 1600,
+   "passable": true,
+   "color": "#8b8a86"
+  }
+ ],
+ "spawn": {
+  "phase_ticks": 100,
+  "radius": 5,
+  "pop": 1500,
+  "gold": 400,
+  "min_distance": 18
+ },
+ "economy": {
+  "gold_per_tile_milli": 8,
+  "min_growth": 1,
+  "capital_defense_permille": 1500
+ },
+ "attack": {
+  "base_rate": 4,
+  "frontier_divisor": 6,
+  "max_rate": 40,
+  "density_permille": 1500,
+  "defender_loss_permille": 900,
+  "min_ratio_permille": 10,
+  "max_ratio_permille": 1000
+ },
+ "eras": [
+  {
+   "id": 0,
+   "key": "paleolithic",
+   "name_ko": "구석기",
+   "cap_per_tile": 30,
+   "growth_permille": 5,
+   "gauge_to_next": 33000,
+   "units_ko": "수렵 무리 · 투석병"
+  },
+  {
+   "id": 1,
+   "key": "neolithic",
+   "name_ko": "신석기",
+   "cap_per_tile": 38,
+   "growth_permille": 5,
+   "gauge_to_next": 45000,
+   "units_ko": "창병 · 목책"
+  },
+  {
+   "id": 2,
+   "key": "ancient",
+   "name_ko": "고대",
+   "cap_per_tile": 48,
+   "growth_permille": 6,
+   "gauge_to_next": 57000,
+   "units_ko": "청동 보병 · 전차 · 궁병"
+  },
+  {
+   "id": 3,
+   "key": "medieval",
+   "name_ko": "중세",
+   "cap_per_tile": 60,
+   "growth_permille": 6,
+   "gauge_to_next": 69000,
+   "units_ko": "기사 · 석궁병 · 공성기"
+  },
+  {
+   "id": 4,
+   "key": "early_modern",
+   "name_ko": "근세",
+   "cap_per_tile": 75,
+   "growth_permille": 7,
+   "gauge_to_next": 81000,
+   "units_ko": "머스킷 · 대포 · 범선"
+  },
+  {
+   "id": 5,
+   "key": "industrial",
+   "name_ko": "산업",
+   "cap_per_tile": 92,
+   "growth_permille": 7,
+   "gauge_to_next": 93000,
+   "units_ko": "소총 보병 · 철갑선 · 철도"
+  },
+  {
+   "id": 6,
+   "key": "modern",
+   "name_ko": "현대",
+   "cap_per_tile": 112,
+   "growth_permille": 8,
+   "gauge_to_next": 105000,
+   "units_ko": "전차 · 항공기 · 핵무기"
+  },
+  {
+   "id": 7,
+   "key": "future",
+   "name_ko": "미래",
+   "cap_per_tile": 135,
+   "growth_permille": 8,
+   "gauge_to_next": 0,
+   "units_ko": "드론 군집 · 궤도 병기 · 사이버전"
+  }
+ ],
+ "era_gauge": {
+  "base": 12,
+  "tiles_divisor": 300,
+  "lowest_bonus_permille": 300,
+  "behind_two_bonus_permille": 500,
+  "perk_timeout_ticks": 300,
+  "tiles_cap": 24
+ },
+ "combat": {
+  "per_era_permille": 250,
+  "max_gap_permille": 600
+ },
+ "buildings": [
+  {
+   "id": 0,
+   "key": "city",
+   "name_ko": "도시",
+   "cost": 900,
+   "era": 0,
+   "cap_bonus": 1500,
+   "desc_ko": "인구 상한 +1500"
+  },
+  {
+   "id": 1,
+   "key": "fort",
+   "name_ko": "요새",
+   "cost": 600,
+   "era": 0,
+   "radius": 6,
+   "defense_permille": 1500,
+   "desc_ko": "반경 6 방어 ×1.5"
+  },
+  {
+   "id": 2,
+   "key": "market",
+   "name_ko": "시장",
+   "cost": 700,
+   "era": 0,
+   "gold_milli": 2000,
+   "desc_ko": "금 수입 +2/틱"
+  },
+  {
+   "id": 3,
+   "key": "lab",
+   "name_ko": "연구소",
+   "cost": 1000,
+   "era": 0,
+   "gauge": 4,
+   "desc_ko": "시대 게이지 +4/틱"
+  },
+  {
+   "id": 4,
+   "key": "port",
+   "name_ko": "항구",
+   "cost": 1500,
+   "era": 3,
+   "coastal": true,
+   "desc_ko": "상륙선 출항 (중세: 사거리 70, 근세부터 무제한)"
+  },
+  {
+   "id": 5,
+   "key": "silo",
+   "name_ko": "사일로",
+   "cost": 4000,
+   "era": 6,
+   "desc_ko": "미사일·핵 발사"
+  }
+ ],
+ "building_cost_growth_permille": 500,
+ "naval": {
+  "medieval_range": 70,
+  "speed_tiles_per_tick": 2,
+  "min_troops": 200,
+  "ocean_era": 4
+ },
+ "strikes": [
+  {
+   "id": 0,
+   "key": "missile",
+   "name_ko": "미사일",
+   "era": 6,
+   "cost": 2500,
+   "radius": 4,
+   "kill_permille": 700,
+   "needs_silo": true,
+   "speed_tiles_per_tick": 6
+  },
+  {
+   "id": 1,
+   "key": "nuke",
+   "name_ko": "핵",
+   "era": 6,
+   "cost": 15000,
+   "radius": 14,
+   "kill_permille": 1000,
+   "needs_silo": true,
+   "speed_tiles_per_tick": 4,
+   "wipes_land": true,
+   "world_penalty": true
+  },
+  {
+   "id": 2,
+   "key": "hack",
+   "name_ko": "해킹",
+   "era": 7,
+   "cost": 3000,
+   "radius": 8,
+   "disable_ticks": 600,
+   "needs_silo": false,
+   "speed_tiles_per_tick": 0
+  },
+  {
+   "id": 3,
+   "key": "orbital",
+   "name_ko": "궤도 타격",
+   "era": 7,
+   "cost": 6000,
+   "radius": 6,
+   "kill_permille": 800,
+   "needs_silo": false,
+   "speed_tiles_per_tick": 0
+  }
+ ],
+ "perks": [
+  {
+   "id": 0,
+   "key": "growth",
+   "name_ko": "다산",
+   "desc_ko": "인구 성장 +15%",
+   "value": 150
+  },
+  {
+   "id": 1,
+   "key": "gold",
+   "name_ko": "교역로",
+   "desc_ko": "금 수입 +15%",
+   "value": 150
+  },
+  {
+   "id": 2,
+   "key": "attack",
+   "name_ko": "전사 문화",
+   "desc_ko": "공격 효율 +10%",
+   "value": 100
+  },
+  {
+   "id": 3,
+   "key": "defense",
+   "name_ko": "성벽",
+   "desc_ko": "방어 +15%",
+   "value": 150
+  },
+  {
+   "id": 4,
+   "key": "build",
+   "name_ko": "장인",
+   "desc_ko": "건물 가격 -20%",
+   "value": 200
+  },
+  {
+   "id": 5,
+   "key": "gauge",
+   "name_ko": "학자",
+   "desc_ko": "시대 게이지 +15%",
+   "value": 150
+  },
+  {
+   "id": 6,
+   "key": "cap",
+   "name_ko": "넓은 터전",
+   "desc_ko": "인구 상한 +10%",
+   "value": 100
+  }
+ ],
+ "treaties": [
+  {
+   "id": 0,
+   "key": "nap",
+   "name_ko": "불가침",
+   "duration": 3000,
+   "notice": 300,
+   "desc_ko": "서로 공격 불가. 예고 파기 시 30초 뒤 해제"
+  },
+  {
+   "id": 1,
+   "key": "alliance",
+   "name_ko": "동맹",
+   "duration": 6000,
+   "notice": 0,
+   "desc_ko": "공격 불가, 병력·금 지원, 동맹 채팅, 공동 승리"
+  },
+  {
+   "id": 2,
+   "key": "ceasefire",
+   "name_ko": "휴전",
+   "duration": 1800,
+   "notice": 0,
+   "desc_ko": "진행 중인 공격 중단, 3분간 공격 불가"
+  },
+  {
+   "id": 3,
+   "key": "trade",
+   "name_ko": "무역",
+   "duration": 0,
+   "notice": 0,
+   "value": 100,
+   "desc_ko": "양국 금 수입 +10% (전쟁 시 해제)"
+  },
+  {
+   "id": 4,
+   "key": "tribute",
+   "name_ko": "조공",
+   "duration": 0,
+   "notice": 0,
+   "value": 150,
+   "desc_ko": "제안자가 수입 15%를 상대에게"
+  },
+  {
+   "id": 5,
+   "key": "techshare",
+   "name_ko": "기술 공유",
+   "duration": 0,
+   "notice": 0,
+   "value": 200,
+   "desc_ko": "양국 시대 게이지 +20%"
+  }
+ ],
+ "diplomacy": {
+  "traitor_ticks": 600,
+  "traitor_defense_permille": 200,
+  "proposal_ticks": 300,
+  "proposal_cooldown": 300,
+  "max_pending": 4
+ },
+ "victory": {
+  "land_permille": 800,
+  "default_minutes": 20
+ },
+ "difficulty": [
+  {
+   "id": 0,
+   "key": "easy",
+   "name_ko": "쉬움",
+   "interval": 150,
+   "mistake_permille": 200,
+   "bonus_permille": 0
+  },
+  {
+   "id": 1,
+   "key": "normal",
+   "name_ko": "보통",
+   "interval": 60,
+   "mistake_permille": 100,
+   "bonus_permille": 0
+  },
+  {
+   "id": 2,
+   "key": "hard",
+   "name_ko": "어려움",
+   "interval": 30,
+   "mistake_permille": 0,
+   "bonus_permille": 100
+  }
+ ],
+ "ai_profiles": [
+  {
+   "id": 0,
+   "key": "conqueror",
+   "name_ko": "정복자",
+   "expand": 1000,
+   "attack_weak": 1500,
+   "keep_treaty": 600,
+   "betray_ratio_permille": 2500,
+   "build": 800,
+   "diplomacy": 500
+  },
+  {
+   "id": 1,
+   "key": "merchant",
+   "name_ko": "상인",
+   "expand": 900,
+   "attack_weak": 700,
+   "keep_treaty": 1300,
+   "betray_ratio_permille": 5000,
+   "build": 1400,
+   "diplomacy": 1400
+  },
+  {
+   "id": 2,
+   "key": "coward",
+   "name_ko": "겁쟁이",
+   "expand": 800,
+   "attack_weak": 500,
+   "keep_treaty": 1200,
+   "betray_ratio_permille": 6000,
+   "build": 1100,
+   "diplomacy": 1600
+  },
+  {
+   "id": 3,
+   "key": "opportunist",
+   "name_ko": "기회주의자",
+   "expand": 1000,
+   "attack_weak": 1600,
+   "keep_treaty": 400,
+   "betray_ratio_permille": 2000,
+   "build": 900,
+   "diplomacy": 1000
+  }
+ ],
+ "names": {
+  "first": [
+   "아르",
+   "벨",
+   "카",
+   "도",
+   "에",
+   "파",
+   "구",
+   "하",
+   "이",
+   "주",
+   "크",
+   "라",
+   "모",
+   "나",
+   "세",
+   "타",
+   "오",
+   "유",
+   "리",
+   "사"
+  ],
+  "second": [
+   "칸",
+   "론",
+   "다",
+   "린",
+   "벤",
+   "사르",
+   "무",
+   "테",
+   "올",
+   "가",
+   "빈",
+   "레",
+   "쿠",
+   "마",
+   "시아",
+   "노",
+   "돈",
+   "르",
+   "한",
+   "비"
+  ],
+  "suffix_nation": [
+   "왕국",
+   "연방",
+   "제국",
+   "공화국",
+   "부족 연합"
+  ],
+  "suffix_bot": [
+   "부족",
+   "씨족",
+   "무리",
+   "마을"
+  ]
+ },
+ "chat": {
+  "global_cooldown_ticks": 30,
+  "burst": 3,
+  "burst_ticks": 50,
+  "max_length": 200
+ }
+}

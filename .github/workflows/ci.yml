@@ -1,62 +1,25 @@
-name: Phase validation
+name: Blitz validation
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  sim:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.os }}
+  tests:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - run: dotnet test tests/Sim.Tests/Sim.Tests.csproj --configuration Release
-      - name: Prove engine boundary
-        shell: pwsh
-        run: ./tools/verify_sim_boundary.ps1
-  godot:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - name: Install Godot 4.6.3 .NET
-        shell: pwsh
+      - name: Install Godot 4.6.3 (standard)
         run: |
-          $url = 'https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_mono_win64.zip'
-          Invoke-WebRequest $url -OutFile "$env:RUNNER_TEMP/godot.zip"
-          Expand-Archive "$env:RUNNER_TEMP/godot.zip" "$env:RUNNER_TEMP/godot"
-          "GODOT=$env:RUNNER_TEMP/godot/Godot_v4.6.3-stable_mono_win64/Godot_v4.6.3-stable_mono_win64_console.exe" >> $env:GITHUB_ENV
-      - run: dotnet build RtsGame.sln --configuration Debug
-      - run: dotnet test --configuration Release
-      - name: Install scene test framework
-        shell: pwsh
-        run: ./tools/setup_gdunit.ps1
-      - name: Generate scenes and smoke check
-        shell: pwsh
+          curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          echo "GODOT=$PWD/Godot_v4.6.3-stable_linux.x86_64" >> $GITHUB_ENV
+      - name: Install GdUnit4 6.2.1
         run: |
-          function Invoke-GodotChecked([string[]]$Arguments) {
-            $log = & $env:GODOT @Arguments 2>&1
-            $exitCode = $LASTEXITCODE
-            $log | Write-Host
-            if ($exitCode -ne 0 -or ($log -join "`n") -match '(?m)(SCRIPT ERROR:|ERROR:)') {
-              throw 'Godot validation failed.'
-            }
-          }
-          Invoke-GodotChecked @('--headless', '--script', 'res://tools/gen_meshes.gd')
-          Invoke-GodotChecked @('--headless', '--script', 'res://tools/gen_audio.gd')
-          Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_ui.gd')
-          Invoke-GodotChecked @('--headless', '--script', 'res://tools/build_scenes.gd')
-          git diff --exit-code -- game/scenes
-          if ($LASTEXITCODE -ne 0) { throw 'Generated scenes differ from committed files.' }
-          Invoke-GodotChecked @('--headless', '--editor', '--import')
-          Invoke-GodotChecked @('--headless', '--quit-after', '3')
-          Invoke-GodotChecked @('--headless', '-s', 'addons/gdUnit4/bin/GdUnitCmdTool.gd', '--ignoreHeadlessMode', '-a', 'test/')
-          foreach ($name in @('boot','lobby','match','replay','settings')) {
-            Invoke-GodotChecked @('--headless', "res://game/scenes/$name.tscn", '--quit-after', '3')
-          }
+          curl -sSL -o gdunit.zip https://github.com/godot-gdunit-labs/gdUnit4/archive/refs/tags/v6.2.1.zip
+          unzip -q gdunit.zip
+          mkdir -p addons && cp -r gdUnit4-6.2.1/addons/gdUnit4 addons/
+      - name: Import
+        run: $GODOT --headless --import || true
+      - name: Unit, determinism and network tests
+        run: $GODOT --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/
+      - name: Headless AI match
+        run: $GODOT --headless -s tools/sim_runner.gd -- --seed=42 --minutes=5 --report=0 | tee sim.log && grep RESULT sim.log

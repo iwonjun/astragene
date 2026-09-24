@@ -1,10 +1,8 @@
-.tools/
 .godot/
+.tools/
 /android/
-**/bin/
-**/obj/
-TestResults/
-logs/
 addons/gdUnit4/
-reports/
 builds/
+logs/
+reports/
+*.tmp
