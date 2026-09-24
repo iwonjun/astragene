@@ -36,7 +36,7 @@ func test_wilderness_attack_spreads_and_conserves_troops() -> void:
 	assert_int(sim.attacks.size()).is_equal(1)
 	# Half the army left home; what it spent is paid in plains tiles at the terrain cost.
 	assert_int(p.pop).is_less_equal(10000 + 200)
-	var cost: int = sim.rules.terrain[MapGen.PLAINS]["cost"]
+	var cost: int = Combat.tile_cost(sim, sim.idx(40, 40), 1, 0)
 	SimFixture.run(sim, 600)
 	assert_int(sim.attacks.size()).is_equal(0)
 	assert_int(p.tiles - tiles).is_between(10000 / cost - 60, 10000 / cost + 5)

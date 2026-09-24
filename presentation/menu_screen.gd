@@ -77,10 +77,18 @@ func _ready() -> void:
 		box.add_child(UI.button("방 만들기 (내 PC가 호스트)", _host, "포트 %d(ENet)·%d(웹)를 엽니다. 같은 공유기면 바로, 인터넷이면 포트포워딩이나 Tailscale 같은 VPN이 필요합니다." % [Protocol.DEFAULT_PORT, Protocol.DEFAULT_PORT + 1]))
 	var join_row := UI.hbox()
 	_address.placeholder_text = "호스트 IP (예: 192.168.0.12)"
+	# Served by a host's WebHost (http://HOST:GAMEPORT+2): prefill that host so friends just press 접속.
+	if UI.is_web():
+		var host := str(JavaScriptBridge.eval("window.location.hostname", true))
+		var web_port := int(str(JavaScriptBridge.eval("window.location.port", true)))
+		if host != "" and web_port > WebHost.PORT_OFFSET:
+			_address.text = "%s:%d" % [host, web_port - WebHost.PORT_OFFSET]
 	_address.custom_minimum_size = Vector2(300, 0)
 	join_row.add_child(_address)
 	join_row.add_child(UI.button("접속", _join))
 	box.add_child(join_row)
+	if UI.is_web() and _address.text != "":
+		box.add_child(UI.label("이 페이지를 연 호스트의 방 주소가 자동으로 입력되었습니다. [접속]을 누르세요.", 14, UI.ACCENT))
 	var bottom := UI.hbox()
 	bottom.add_child(UI.button("게임 방법", func(): _help.visible = not _help.visible))
 	if not UI.is_web():

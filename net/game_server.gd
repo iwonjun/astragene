@@ -23,11 +23,14 @@ var hashes := {}               # tick -> hash (recent checkpoints)
 var chat_limits := {}          # key -> PackedInt32Array of recent send ticks
 var local_links := {}          # key -> NetLinks.LocalLink
 var turn_log: Array = []       # [tick, intents] kept for diagnostics of the last minute
+var hash_ok := 0
+var desyncs := 0
 var manual_turns := false      # tests drive turns with force_turn()
 var _accum := 0
 var _last_usec := 0
 var _next_local := 1
 var ai_voice := AiVoice.new()
+var web := WebHost.new()
 var chat_filter := ChatFilter.new()
 
 
@@ -46,6 +49,8 @@ func listen(port: int) -> Error:
 		push_warning("WebSocket server unavailable on %d: %s" % [port + 1, error_string(w)])
 	for p in [enet, websocket]:
 		p.peer_disconnected.connect(_on_disconnect.bind(p))
+	if web.start(port + WebHost.PORT_OFFSET):
+		_log("웹 클라이언트 제공: http://<이 PC의 IP>:%d" % (port + WebHost.PORT_OFFSET))
 	_log("서버 시작: ENet %d / WebSocket %d" % [port, port + 1])
 	return OK
 
@@ -61,6 +66,7 @@ func local_link() -> NetLinks.LocalLink:
 
 
 func _process(_delta: float) -> void:
+	web.poll()
 	for peer: MultiplayerPeer in [enet, websocket]:
 		if peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
 			continue
@@ -266,7 +272,13 @@ func _hash(key: String, msg: Dictionary) -> void:
 	var t := int(msg.get("t", -1))
 	if not hashes.has(t):
 		return
-	if int(msg.get("h", 0)) != hashes[t]:
+	if int(msg.get("h", 0)) == hashes[t]:
+		hash_ok += 1
+		if hash_ok % 50 == 0:
+			_log("해시 검사 %d회 일치, 디싱크 %d회 (틱 %d)" % [hash_ok, desyncs, t])
+		return
+	desyncs += 1
+	if true:
 		var s := _seat(key)
 		_log("디싱크 감지: %s 틱 %d — 스냅샷으로 복구" % [s.get("name", key), t])
 		_send(key, {"m": "snapshot", "t": sim.tick, "data": sim.snapshot()})

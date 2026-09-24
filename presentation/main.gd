@@ -81,6 +81,28 @@ func _new_client() -> void:
 	add_child(client)
 	client.match_started.connect(show_game)
 	client.rejected.connect(show_menu)
+	# Automation for multi-process checks: --autostart (host starts at once), --exit-after-ticks=N.
+	if arg("autostart") != "":
+		client.lobby_updated.connect(_on_auto_lobby)
+	_exit_after = int(arg("exit-after-ticks", "0"))
+
+
+var _exit_after := 0
+var _auto_configured := false
+func _on_auto_lobby(players: Array, _settings: Dictionary) -> void:
+	if not client.is_host or client.sim != null:
+		return
+	if not _auto_configured:
+		_auto_configured = true
+		client.send_setup({"bots": int(arg("bots", "10")), "nations": int(arg("nations", "3")), "seed": int(arg("seed", "4242"))})
+	if players.size() >= maxi(1, int(arg("autostart", "1"))):
+		client.send_start()
+
+
+func _process(_delta: float) -> void:
+	if _exit_after > 0 and client != null and client.sim != null and client.sim.tick >= _exit_after:
+		print("CLIENT HASH tick=%d hash=%08x pid=%d" % [client.sim.tick, client.sim.state_hash(), client.pid])
+		get_tree().quit(0)
 
 
 func start_solo(settings: Dictionary) -> void:

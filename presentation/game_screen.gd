@@ -183,9 +183,13 @@ func _set_mode(m: String, kind: int) -> void:
 	mode = m
 	mode_kind = kind
 	match m:
-		"attack": mode_label.text = "모드: 공격/확장"
-		"build": mode_label.text = "모드: %s 짓기 — 내 땅 클릭" % rules.buildings[kind]["name_ko"]
-		"strike": mode_label.text = "모드: %s — 목표 클릭" % rules.strikes[kind]["name_ko"]
+		"attack": _mode_text = "모드: 공격/확장"
+		"build": _mode_text = "모드: %s 짓기 — 내 땅 클릭" % rules.buildings[kind]["name_ko"]
+		"strike": _mode_text = "모드: %s — 목표 클릭" % rules.strikes[kind]["name_ko"]
+	mode_label.text = _mode_text
+
+
+var _mode_text := ""
 
 
 # ------------------------------------------------------------------ frame
@@ -200,6 +204,10 @@ func _process(delta: float) -> void:
 		_centered = true
 		_jump_tile(me.capital)
 	_camera(delta)
+	var now := Time.get_ticks_msec()
+	for c in toasts.get_children():
+		if int(c.get_meta("until", 0)) < now:
+			c.queue_free()
 	_events()
 	_top(me)
 	_board_timer -= delta
@@ -289,6 +297,14 @@ func _top(me: SimPlayer) -> void:
 		era_label.text = "%s 시대 → %s  %d%%" % [rules.eras[me.era]["name_ko"], rules.eras[me.era + 1]["name_ko"], me.gauge * 100 / maxi(1, need)]
 		gauge.value = me.gauge * 100.0 / maxi(1, need)
 	ratio_label.text = "%d%% = %s명" % [ratio / 10, Fmt.num(me.pop * ratio / 1000)]
+	var fronts := []
+	for a in sim.attacks:
+		if a.attacker == me.pid and not a.done:
+			fronts.append("%s %s" % ["빈 땅" if a.target == 0 else sim.players[a.target].name, Fmt.num(a.troops)])
+	for b in sim.boats:
+		if b["pid"] == me.pid:
+			fronts.append("상륙선 %s" % Fmt.num(b["troops"]))
+	mode_label.text = _mode_text + ("   진행 중: " + ", ".join(fronts) if fronts.size() > 0 else "")
 
 
 func _relation(me: int, pid: int) -> String:
@@ -454,7 +470,7 @@ func _toast(text: String, alert: bool) -> void:
 	toasts.add_child(p)
 	while toasts.get_child_count() > 4:
 		toasts.get_child(0).queue_free()
-	get_tree().create_timer(5.0).timeout.connect(_free_later.bind(p))
+	p.set_meta("until", Time.get_ticks_msec() + 5000)  # wall clock: robust when the tab is throttled
 
 
 func _on_chat(msg: Dictionary) -> void:
@@ -568,7 +584,11 @@ func _click(t: int) -> void:
 
 func _attack_tile(me: SimPlayer, t: int) -> void:
 	var o: int = sim.owner[t]
-	if not sim.passable(t) or o == me.pid:
+	if not sim.passable(t):
+		_toast("바다입니다. 땅을 클릭하세요. (바다 건너 공격은 항구 + 상대 해안 클릭)", false)
+		return
+	if o == me.pid:
+		_toast("내 땅입니다. 국경 밖의 빈 땅이나 다른 나라 땅을 클릭하세요. 건물은 B.", false)
 		return
 	var info := sim.border_info(me.pid)
 	var by_land: bool = (o == 0 and info["wild"]) or (o != 0 and info["neighbors"].has(o))

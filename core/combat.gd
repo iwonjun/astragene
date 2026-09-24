@@ -159,7 +159,8 @@ static func tile_cost(sim: Sim, t: int, attacker: int, target: int) -> int:
 	var a: SimPlayer = sim.players[attacker]
 	if target == Sim.NONE:
 		var perk_value: int = sim.rules.perks[2]["value"]
-		return maxi(1, base * 1000 / (1000 + perk_value * a.perk(2)))
+		var wild: int = int(sim.rules.section("attack").get("wild_cost_permille", 1000))
+		return maxi(1, base * wild / (1000 + perk_value * a.perk(2)))
 	var d: SimPlayer = sim.players[target]
 	var defense: int = tr["defense_permille"]
 	defense = defense * fort_multiplier(sim, t, target) / 1000

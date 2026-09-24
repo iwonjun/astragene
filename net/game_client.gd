@@ -42,8 +42,8 @@ func begin(new_link: NetLinks.Link, name: String, server_address: String = "loca
 	_lost = false
 	var cfg := ConfigFile.new()
 	var saved_token := ""
-	if cfg.load(SESSION_FILE) == OK and cfg.get_value("session", "address", "") == address:
-		saved_token = cfg.get_value("session", "token", "")
+	if cfg.load(SESSION_FILE) == OK:
+		saved_token = cfg.get_value("sessions", _session_key(), "")
 	_hello_token = saved_token
 	_hello_sent = false
 
@@ -79,8 +79,8 @@ func _handle(msg: Dictionary) -> void:
 			pid = int(msg["pid"])
 			token = str(msg.get("token", ""))
 			var cfg := ConfigFile.new()
-			cfg.set_value("session", "address", address)
-			cfg.set_value("session", "token", token)
+			cfg.load(SESSION_FILE)
+			cfg.set_value("sessions", _session_key(), token)
 			cfg.save(SESSION_FILE)
 			sim = Sim.create(msg["config"], rules)
 			turns = turns.filter(func(t): return t[0] >= sim.tick)
@@ -122,6 +122,11 @@ func _advance() -> void:
 		if t % GameServer.HASH_EVERY == 0:
 			link.send({"m": "hash", "t": t, "h": sim.state_hash()})
 		budget -= 1
+
+
+## One saved seat per server address and player name (several windows on one PC stay distinct).
+func _session_key() -> String:
+	return (address + "|" + player_name).uri_encode()
 
 
 func send_intent(intent: Dictionary) -> void:

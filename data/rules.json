@@ -69,10 +69,11 @@
   "base_rate": 4,
   "frontier_divisor": 6,
   "max_rate": 40,
-  "density_permille": 1500,
+  "density_permille": 2200,
   "defender_loss_permille": 900,
   "min_ratio_permille": 10,
-  "max_ratio_permille": 1000
+  "max_ratio_permille": 1000,
+  "wild_cost_permille": 500
  },
  "eras": [
   {
@@ -81,7 +82,7 @@
    "name_ko": "구석기",
    "cap_per_tile": 30,
    "growth_permille": 5,
-   "gauge_to_next": 33000,
+   "gauge_to_next": 39600,
    "units_ko": "수렵 무리 · 투석병"
   },
   {
@@ -90,7 +91,7 @@
    "name_ko": "신석기",
    "cap_per_tile": 38,
    "growth_permille": 5,
-   "gauge_to_next": 45000,
+   "gauge_to_next": 54000,
    "units_ko": "창병 · 목책"
   },
   {
@@ -99,7 +100,7 @@
    "name_ko": "고대",
    "cap_per_tile": 48,
    "growth_permille": 6,
-   "gauge_to_next": 57000,
+   "gauge_to_next": 68400,
    "units_ko": "청동 보병 · 전차 · 궁병"
   },
   {
@@ -108,7 +109,7 @@
    "name_ko": "중세",
    "cap_per_tile": 60,
    "growth_permille": 6,
-   "gauge_to_next": 69000,
+   "gauge_to_next": 82800,
    "units_ko": "기사 · 석궁병 · 공성기"
   },
   {
@@ -117,7 +118,7 @@
    "name_ko": "근세",
    "cap_per_tile": 75,
    "growth_permille": 7,
-   "gauge_to_next": 81000,
+   "gauge_to_next": 97200,
    "units_ko": "머스킷 · 대포 · 범선"
   },
   {
@@ -126,7 +127,7 @@
    "name_ko": "산업",
    "cap_per_tile": 92,
    "growth_permille": 7,
-   "gauge_to_next": 93000,
+   "gauge_to_next": 111600,
    "units_ko": "소총 보병 · 철갑선 · 철도"
   },
   {
@@ -135,7 +136,7 @@
    "name_ko": "현대",
    "cap_per_tile": 112,
    "growth_permille": 8,
-   "gauge_to_next": 105000,
+   "gauge_to_next": 126000,
    "units_ko": "전차 · 항공기 · 핵무기"
   },
   {

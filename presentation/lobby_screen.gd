@@ -69,6 +69,7 @@ func _ready() -> void:
 	root.add_child(right)
 	right.add_child(UI.label("대기실 채팅", 18, UI.GOLD))
 	_chat.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_chat.custom_minimum_size = Vector2(420, 360)
 	_chat.bbcode_enabled = true
 	_chat.scroll_following = true
 	right.add_child(UI.panel(_chat))
@@ -90,11 +91,16 @@ static func _escape(t: String) -> String:
 func _address_hint(host: bool) -> String:
 	if not host:
 		return "접속했습니다. 호스트가 경기를 시작하면 바로 시작됩니다."
+	if app.server == null:
+		return "당신이 이 방의 방장입니다. 친구들이 모이면 설정을 고르고 [경기 시작]을 누르세요."
 	var ips := []
 	for ip in IP.get_local_addresses():
 		if ip.count(".") == 3 and not ip.begins_with("127.") and not ip.begins_with("169.254"):
 			ips.append(ip)
-	return "방을 만들었습니다. 친구에게 아래 주소를 알려 주세요.\n%s  (데스크톱 포트 %d, 브라우저 포트 %d)\n인터넷 너머 친구는 공유기 포트포워딩 또는 Tailscale 같은 VPN이 필요합니다." % [", ".join(ips), Protocol.DEFAULT_PORT, Protocol.DEFAULT_PORT + 1]
+	var text := "방을 만들었습니다. 친구에게 아래 주소를 알려 주세요.\n게임 접속 주소: %s  (포트 %d)" % [", ".join(ips), Protocol.DEFAULT_PORT]
+	if app.server != null and app.server.web.tcp.is_listening() and ips.size() > 0:
+		text += "\n설치 없이 브라우저로: http://%s:%d" % [ips[0], Protocol.DEFAULT_PORT + WebHost.PORT_OFFSET]
+	return text + "\n인터넷 너머 친구는 공유기 포트포워딩 또는 Tailscale 같은 VPN이 필요합니다."
 
 
 func _on_lobby(players: Array, settings: Dictionary) -> void:
